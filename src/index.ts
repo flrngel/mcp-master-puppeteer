@@ -27,7 +27,7 @@ const screenshots = new Map<string, string>();
 const TOOLS: Tool[] = [
   {
     name: "puppeteer_navigate_analyze",
-    description: "Navigate to a URL and return comprehensive page analysis with metadata, content (in specified format), and errors",
+    description: "Navigate to a URL and return page status, title, and optionally content/metadata. Use contentFormat='none' for fastest response.",
     inputSchema: {
       type: "object",
       properties: {
@@ -46,8 +46,8 @@ const TOOLS: Tool[] = [
         },
         contentFormat: {
           type: "string",
-          enum: ["markdown", "html", "plain-text", "structured-json"],
-          description: "Format for the page content (default: markdown)"
+          enum: ["none", "markdown", "html", "plain-text", "structured-json"],
+          description: "Format for the page content. Use 'none' to skip content extraction (default: none)"
         },
         includeMetadata: {
           type: "boolean",
