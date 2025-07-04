@@ -95,6 +95,7 @@ export interface ScreenshotPlusOptions {
   actions?: any[]; // Keep existing PageAction type
   resizeForLLM?: boolean; // Resize to stay under max dimension limit (default: true)
   maxDimension?: number; // Maximum width or height in pixels (default: 8000 for single, 2000 for multiple)
+  resizeStrategy?: "cut" | "resize"; // Strategy for handling oversized images (default: "cut")
 }
 
 export interface ScreenshotPlusResult {
