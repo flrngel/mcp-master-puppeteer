@@ -121,6 +121,11 @@ const TOOLS: Tool[] = [
         maxDimension: {
           type: "number",
           description: "Maximum width or height in pixels. Default: 8000 for single image, 2000 for multiple images (Claude.ai limits)"
+        },
+        resizeStrategy: {
+          type: "string",
+          enum: ["cut", "resize"],
+          description: "How to handle oversized images: 'cut' crops the image, 'resize' scales it down (default: 'cut')"
         }
       },
       required: ["name"],
