@@ -82,7 +82,7 @@ Navigate to a URL and return comprehensive page analysis with metadata, content 
 
 ### 2. puppeteer_screenshot_plus
 
-Take screenshots with detailed metadata including dimensions, file sizes, and capture settings.
+Take screenshots optimized for LLM processing with automatic resizing to stay under pixel limits.
 
 **Options:**
 ```typescript
@@ -94,6 +94,8 @@ Take screenshots with detailed metadata including dimensions, file sizes, and ca
   format?: "png" | "jpeg" | "webp";  // Image format (default: "jpeg")
   quality?: number;               // JPEG/WebP quality 0-100 (default: 80)
   actions?: PageAction[];         // Actions to perform before screenshot
+  resizeForLLM?: boolean;         // Resize to stay under max pixels (default: true)
+  maxPixels?: number;             // Maximum dimension in pixels (default: 8000)
 }
 ```
 
@@ -507,24 +509,32 @@ await puppeteer_extract_content({
 });
 ```
 
-### Capture Screenshots with Metadata
+### Capture Screenshots Optimized for LLMs
 
 ```javascript
+// Default: resized for LLM processing
 await puppeteer_screenshot_plus({
   name: "homepage",
   breakpoints: [375, 768, 1280],
   format: "jpeg",
-  quality: 85,
-  optimizeForSize: true
+  quality: 85
+});
+// Screenshots automatically resized if > 8000px
+
+// Custom max size
+await puppeteer_screenshot_plus({
+  name: "homepage",
+  breakpoints: [1920],
+  resizeForLLM: true,
+  maxPixels: 4000  // Smaller limit
 });
 
-// Returns for each breakpoint:
-// - Viewport configuration
-// - Image dimensions and aspect ratio
-// - File size (bytes and formatted)
-// - Capture timing
-// - Browser metadata
-// - Any errors during capture
+// Disable resizing for full quality
+await puppeteer_screenshot_plus({
+  name: "homepage",
+  breakpoints: [1920],
+  resizeForLLM: false  // Keep original size
+});
 ```
 
 ### Analyze Page for SEO

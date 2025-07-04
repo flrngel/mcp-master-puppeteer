@@ -13,7 +13,9 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
     fullPage = true,
     format = 'jpeg',
     quality = 80,
-    actions = []
+    actions = [],
+    resizeForLLM = true,
+    maxPixels = 8000
   } = args;
   
   const page = await getPage();
@@ -56,6 +58,31 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
         screenshotOptions.quality = quality;
       }
       
+      // Calculate actual dimensions for the screenshot
+      let actualWidth = fullPage ? dimensions.content.width : Math.min(dimensions.content.width, breakpoint);
+      let actualHeight = fullPage ? dimensions.content.height : Math.min(dimensions.content.height, 800);
+      
+      // Check if we need to resize for LLM
+      let viewportForScreenshot = { width: breakpoint, height: 800 };
+      if (resizeForLLM) {
+        const maxDimension = Math.max(actualWidth, actualHeight);
+        if (maxDimension > maxPixels) {
+          // Calculate scale factor to keep aspect ratio
+          const scaleFactor = maxPixels / maxDimension;
+          const scaledWidth = Math.round(breakpoint * scaleFactor);
+          const scaledHeight = Math.round(800 * scaleFactor);
+          
+          // Set scaled viewport
+          viewportForScreenshot = { width: scaledWidth, height: scaledHeight };
+          await page.setViewport(viewportForScreenshot);
+          await new Promise(resolve => setTimeout(resolve, 300)); // Wait for resize
+          
+          // Update actual dimensions
+          actualWidth = Math.round(actualWidth * scaleFactor);
+          actualHeight = Math.round(actualHeight * scaleFactor);
+        }
+      }
+      
       // Take screenshot
       let screenshot: string;
       if (selector) {
@@ -70,16 +97,16 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
       
       // Calculate aspect ratio
       const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
-      const aspectGcd = gcd(dimensions.content.width, dimensions.content.height);
-      const aspectRatio = `${dimensions.content.width / aspectGcd}:${dimensions.content.height / aspectGcd}`;
+      const aspectGcd = gcd(actualWidth, actualHeight);
+      const aspectRatio = `${actualWidth / aspectGcd}:${actualHeight / aspectGcd}`;
       
       screenshots.push({
-        viewport: { width: breakpoint, height: 800 },
+        viewport: viewportForScreenshot,
         dataUrl: `data:image/${format};base64,${screenshot}`,
         format,
         dimensions: {
-          width: fullPage ? dimensions.content.width : Math.min(dimensions.content.width, breakpoint),
-          height: fullPage ? dimensions.content.height : Math.min(dimensions.content.height, 800),
+          width: actualWidth,
+          height: actualHeight,
           aspectRatio
         },
         fullPage
