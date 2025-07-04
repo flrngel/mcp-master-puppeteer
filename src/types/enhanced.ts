@@ -3,7 +3,7 @@
 import { PageError, ErrorSummary } from './index.js';
 
 // Common types for content format options
-export type ContentFormat = "markdown" | "html" | "plain-text" | "structured-json";
+export type ContentFormat = "none" | "markdown" | "html" | "plain-text" | "structured-json";
 
 // Removed ContentProcessingInfo - not useful for agents
 
@@ -22,7 +22,7 @@ export interface NavigateAnalyzeResult {
   url: string; // Final URL after redirects
   statusCode: number;
   title: string;
-  content: string; // In requested format
+  content?: string; // In requested format (omitted if contentFormat is "none")
   contentFormat: ContentFormat; // What format the content is in
   
   // Optional - only if there are errors
