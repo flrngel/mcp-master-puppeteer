@@ -24,7 +24,7 @@ Each tool is designed to minimize token usage while maintaining utility:
 
 ### 1. puppeteer_navigate_analyze
 
-Navigate to a URL and return comprehensive page analysis with metadata, content in your preferred format, and performance metrics.
+Navigate to a URL and return page status, title, and optionally content/metadata. Default contentFormat is "none" for fastest response.
 
 **Options:**
 ```typescript
@@ -53,7 +53,7 @@ Navigate to a URL and return comprehensive page analysis with metadata, content 
   url: string;                    // Final URL after redirects
   statusCode: number;
   title: string;
-  content: string;                // In requested format
+  content?: string;                // Omitted if contentFormat is "none"
   contentFormat: ContentFormat;
   
   // Optional - only if there are errors
@@ -457,7 +457,7 @@ Add to your MCP settings:
 ### Navigate with Smart Defaults
 
 ```javascript
-// Default includes basic metadata
+// Default: no content extraction for fastest response
 await puppeteer_navigate_analyze({
   url: "https://example.com"
 });
@@ -467,19 +467,25 @@ await puppeteer_navigate_analyze({
 //   url: "https://example.com",
 //   statusCode: 200,
 //   title: "Example Domain",
-//   content: "# Example Domain\n\nThis domain is...",
-//   contentFormat: "markdown",
+//   contentFormat: "none",
 //   metadata: {
-//     description: "Example Domain for use in examples",
-//     ogImage: "https://example.com/image.jpg"
+//     description: "Example Domain for use in examples"
 //   }
 // }
 
-// Disable metadata for minimal response
+// With content extraction
+await puppeteer_navigate_analyze({
+  url: "https://example.com",
+  contentFormat: "markdown"
+});
+// Returns with content field populated
+
+// Truly minimal response
 await puppeteer_navigate_analyze({
   url: "https://example.com",
   includeMetadata: false
 });
+// Returns only: url, statusCode, title, contentFormat
 ```
 
 ### Extract Content Efficiently
