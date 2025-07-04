@@ -15,8 +15,12 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
     quality = 80,
     actions = [],
     resizeForLLM = true,
-    maxPixels = 8000
+    maxDimension
   } = args;
+  
+  // Default max dimension: 2000 for multiple screenshots, 8000 for single
+  const defaultMaxDimension = breakpoints.length > 1 ? 2000 : 8000;
+  const maxDim = maxDimension ?? defaultMaxDimension;
   
   const page = await getPage();
   const errorCollector = new ErrorCollector(page);
@@ -65,10 +69,10 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
       // Check if we need to resize for LLM
       let viewportForScreenshot = { width: breakpoint, height: 800 };
       if (resizeForLLM) {
-        const totalPixels = actualWidth * actualHeight;
-        if (totalPixels > maxPixels) {
-          // Calculate scale factor to keep aspect ratio while staying under total pixel limit
-          const scaleFactor = Math.sqrt(maxPixels / totalPixels);
+        const maxDimension = Math.max(actualWidth, actualHeight);
+        if (maxDimension > maxDim) {
+          // Calculate scale factor to keep aspect ratio while staying under max dimension
+          const scaleFactor = maxDim / maxDimension;
           const scaledWidth = Math.round(breakpoint * scaleFactor);
           const scaledHeight = Math.round(800 * scaleFactor);
           

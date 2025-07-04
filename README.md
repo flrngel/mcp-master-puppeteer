@@ -82,7 +82,7 @@ Navigate to a URL and return comprehensive page analysis with metadata, content 
 
 ### 2. puppeteer_screenshot_plus
 
-Take screenshots optimized for LLM processing with automatic resizing to stay under pixel limits.
+Take screenshots optimized for LLM processing with automatic resizing to stay under dimension limits. Automatically adjusts to Claude.ai's limits: 8000×8000 for single images, 2000×2000 for multiple images.
 
 **Options:**
 ```typescript
@@ -94,8 +94,8 @@ Take screenshots optimized for LLM processing with automatic resizing to stay un
   format?: "png" | "jpeg" | "webp";  // Image format (default: "jpeg")
   quality?: number;               // JPEG/WebP quality 0-100 (default: 80)
   actions?: PageAction[];         // Actions to perform before screenshot
-  resizeForLLM?: boolean;         // Resize to stay under max total pixels (default: true)
-  maxPixels?: number;             // Maximum total pixels (width × height). 8000 = ~89×89 square (default: 8000)
+  resizeForLLM?: boolean;         // Resize to stay under max dimension (default: true)
+  maxDimension?: number;          // Max width or height. Default: 8000 (single), 2000 (multiple)
 }
 ```
 
@@ -519,14 +519,14 @@ await puppeteer_screenshot_plus({
   format: "jpeg",
   quality: 85
 });
-// Screenshots automatically resized if total pixels > 8000
+// Multiple screenshots: auto-resized to 2000×2000 max
 
-// Custom max size (e.g., for Claude Haiku's 4000 pixel limit)
+// Single screenshot with custom limit
 await puppeteer_screenshot_plus({
   name: "homepage",
-  breakpoints: [1920],
+  breakpoints: [1920], // Single breakpoint = 8000×8000 max by default
   resizeForLLM: true,
-  maxPixels: 4000  // ~63×63 square or 80×50 rectangle
+  maxDimension: 4096  // Custom max dimension
 });
 
 // Disable resizing for full quality
@@ -588,6 +588,14 @@ await puppeteer_batch_interact({
 
 **screenshotPlus Before**: ~1,200 tokens per screenshot
 **screenshotPlus After**: ~150 tokens per screenshot
+
+### Screenshot Resizing
+
+Automatically resizes screenshots to comply with Claude.ai limits:
+- **Single image**: Max 8000×8000 pixels
+- **Multiple images**: Max 2000×2000 pixels per image
+- Maintains aspect ratio when resizing
+- Can be customized with `maxDimension` parameter
 
 ### When to Use Options
 

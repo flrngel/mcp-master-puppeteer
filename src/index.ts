@@ -116,11 +116,11 @@ const TOOLS: Tool[] = [
         },
         resizeForLLM: {
           type: "boolean",
-          description: "Resize screenshots to stay under max total pixels for LLM processing (default: true)"
+          description: "Resize screenshots to stay under max dimension for LLM processing (default: true)"
         },
-        maxPixels: {
+        maxDimension: {
           type: "number",
-          description: "Maximum total pixels (width × height) when resizing for LLM. For example, 8000 allows up to ~89×89 square or 100×80 rectangle (default: 8000)"
+          description: "Maximum width or height in pixels. Default: 8000 for single image, 2000 for multiple images (Claude.ai limits)"
         }
       },
       required: ["name"],

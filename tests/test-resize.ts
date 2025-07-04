@@ -16,40 +16,53 @@ async function testResize() {
       includeMetadata: false
     });
 
-    // Test 1: Default resizing (should resize if > 8000px)
-    console.log('\n2️⃣ Testing default resizing...');
-    const defaultResize = await screenshotPlus({
-      name: 'test-default',
-      breakpoints: [1920], // Large viewport
+    // Test 1: Single image (should use 8000 max)
+    console.log('\n2️⃣ Testing single image (8000px max)...');
+    const singleImage = await screenshotPlus({
+      name: 'test-single',
+      breakpoints: [1920], // Single breakpoint
       fullPage: true
     });
     
-    const dims1 = defaultResize.screenshots[0].dimensions;
-    const totalPixels1 = dims1.width * dims1.height;
-    console.log('Screenshot taken with default settings:');
-    console.log('- Viewport:', defaultResize.screenshots[0].viewport);
-    console.log('- Dimensions:', dims1);
-    console.log('- Total pixels:', totalPixels1.toLocaleString(), `(${totalPixels1 > 8000 ? 'resized' : 'original'})`);
+    const dims1 = singleImage.screenshots[0].dimensions;
+    const maxDim1 = Math.max(dims1.width, dims1.height);
+    console.log('Single image (8000px max):');
+    console.log('- Viewport:', singleImage.screenshots[0].viewport);
+    console.log('- Dimensions:', `${dims1.width}×${dims1.height}`);
+    console.log('- Max dimension:', maxDim1, `(${maxDim1 > 8000 ? 'resized' : 'within limit'})`);
 
-    // Test 2: Custom max pixels
-    console.log('\n3️⃣ Testing custom max pixels (4000)...');
-    const customResize = await screenshotPlus({
+    // Test 2: Multiple images (should use 2000 max)
+    console.log('\n3️⃣ Testing multiple images (2000px max)...');
+    const multipleImages = await screenshotPlus({
+      name: 'test-multiple',
+      breakpoints: [375, 768, 1280], // Multiple breakpoints
+      fullPage: true
+    });
+    
+    console.log('Multiple images (auto 2000px limit):');
+    multipleImages.screenshots.forEach((screenshot, i) => {
+      const maxDim = Math.max(screenshot.dimensions.width, screenshot.dimensions.height);
+      console.log(`  Image ${i + 1}: ${screenshot.dimensions.width}×${screenshot.dimensions.height}, max dim: ${maxDim}`);
+    });
+
+    // Test 3: Custom max dimension
+    console.log('\n4️⃣ Testing custom max dimension...');
+    const customMax = await screenshotPlus({
       name: 'test-custom',
       breakpoints: [1920],
       fullPage: true,
       resizeForLLM: true,
-      maxPixels: 4000
+      maxDimension: 4000
     });
     
-    const dims2 = customResize.screenshots[0].dimensions;
-    const totalPixels2 = dims2.width * dims2.height;
-    console.log('Screenshot with custom max pixels:');
-    console.log('- Viewport:', customResize.screenshots[0].viewport);
-    console.log('- Dimensions:', dims2);
-    console.log('- Total pixels:', totalPixels2.toLocaleString(), `(${totalPixels2 > 4000 ? 'resized' : 'within limit'})`);
+    const dims3 = customMax.screenshots[0].dimensions;
+    const maxDim3 = Math.max(dims3.width, dims3.height);
+    console.log('Custom max dimension (4000px):');
+    console.log('- Dimensions:', `${dims3.width}×${dims3.height}`);
+    console.log('- Max dimension:', maxDim3);
 
-    // Test 3: Disable resizing
-    console.log('\n4️⃣ Testing with resizing disabled...');
+    // Test 4: Disable resizing
+    console.log('\n5️⃣ Testing with resizing disabled...');
     const noResize = await screenshotPlus({
       name: 'test-no-resize',
       breakpoints: [1920],
@@ -57,38 +70,17 @@ async function testResize() {
       resizeForLLM: false
     });
     
-    const dims3 = noResize.screenshots[0].dimensions;
-    const totalPixels3 = dims3.width * dims3.height;
-    console.log('Screenshot without resizing:');
-    console.log('- Viewport:', noResize.screenshots[0].viewport);
-    console.log('- Dimensions:', dims3);
-    console.log('- Total pixels:', totalPixels3.toLocaleString(), '(original size)');
-
-    // Test 4: Multiple breakpoints with resizing
-    console.log('\n5️⃣ Testing multiple breakpoints...');
-    const multiBreakpoint = await screenshotPlus({
-      name: 'test-multi',
-      breakpoints: [375, 768, 1280, 1920],
-      resizeForLLM: true,
-      maxPixels: 6000
-    });
-    
-    console.log('Multiple breakpoints:');
-    multiBreakpoint.screenshots.forEach((screenshot, i) => {
-      const totalPx = screenshot.dimensions.width * screenshot.dimensions.height;
-      console.log(`  Breakpoint ${i + 1}:`, {
-        viewport: screenshot.viewport.width,
-        actualDimensions: `${screenshot.dimensions.width}×${screenshot.dimensions.height}`,
-        totalPixels: totalPx.toLocaleString(),
-        status: totalPx > 6000 ? 'resized' : 'within limit'
-      });
-    });
+    const dims4 = noResize.screenshots[0].dimensions;
+    const maxDim4 = Math.max(dims4.width, dims4.height);
+    console.log('No resizing:');
+    console.log('- Dimensions:', `${dims4.width}×${dims4.height}`);
+    console.log('- Max dimension:', maxDim4, '(original)');
 
     console.log('\n✅ Resizing features:');
-    console.log('- Default behavior: Resize if total pixels > 8000');
-    console.log('- Uses square root scaling to maintain aspect ratio');
+    console.log('- Single image: 8000×8000 max (Claude.ai single image limit)');
+    console.log('- Multiple images: 2000×2000 max (Claude.ai multi-image limit)');
+    console.log('- Maintains aspect ratio when resizing');
     console.log('- Can be customized or disabled');
-    console.log('- Works with all breakpoints');
 
   } catch (error) {
     console.error('❌ Test failed:', error);
