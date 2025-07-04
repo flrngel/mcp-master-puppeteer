@@ -9,7 +9,7 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     url, 
     waitUntil = 'networkidle0', 
     timeout = 30000,
-    contentFormat = 'markdown',
+    contentFormat = 'none',  // Default to none for minimal response
     includeMetadata = true,  // Default to true for basic metadata
     includePerformance = false
   } = args;
@@ -49,24 +49,26 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     const pageTitle = await page.title();
     
     // Process content based on format
-    let contentData: string;
+    let contentData: string | undefined;
     
-    if (contentFormat === 'markdown') {
-      const extractedContent = await extractPageContent(page);
-      contentData = createContentSummary(extractedContent);
-    } else if (contentFormat === 'html') {
-      contentData = await page.content();
-    } else if (contentFormat === 'plain-text') {
-      contentData = await page.evaluate(() => document.body.innerText);
-    } else {
-      // structured-json format
-      const extracted = await extractPageContent(page);
-      contentData = JSON.stringify({
-        title: pageTitle,
-        headings: extracted.headings,
-        paragraphs: extracted.paragraphs,
-        links: extracted.links
-      }, null, 2);
+    if (contentFormat !== 'none') {
+      if (contentFormat === 'markdown') {
+        const extractedContent = await extractPageContent(page);
+        contentData = createContentSummary(extractedContent);
+      } else if (contentFormat === 'html') {
+        contentData = await page.content();
+      } else if (contentFormat === 'plain-text') {
+        contentData = await page.evaluate(() => document.body.innerText);
+      } else {
+        // structured-json format
+        const extracted = await extractPageContent(page);
+        contentData = JSON.stringify({
+          title: pageTitle,
+          headings: extracted.headings,
+          paragraphs: extracted.paragraphs,
+          links: extracted.links
+        }, null, 2);
+      }
     }
     
     // Get final URL after redirects
@@ -83,9 +85,13 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
       url: finalUrl,
       statusCode: response.status(),
       title: pageTitle,
-      content: contentData,
       contentFormat,
     };
+    
+    // Only add content if format is not 'none'
+    if (contentData !== undefined) {
+      result.content = contentData;
+    }
     
     // Only add errors if there are any
     if (errors.length > 0) {
