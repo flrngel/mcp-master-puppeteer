@@ -18,7 +18,7 @@ async function testOptimizedTools() {
       contentFormat: 'markdown'
     });
     console.log('Minimal result keys:', Object.keys(minimalNav));
-    console.log('Content length:', minimalNav.content.length);
+    console.log('Has content?', !!minimalNav.content);
     console.log('Has errors?', !!minimalNav.errors);
     console.log('Has metadata?', !!minimalNav.metadata);
     console.log('Has performance?', !!minimalNav.performance);
