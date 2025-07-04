@@ -1,8 +1,9 @@
 import { getPage } from '../utils/browserManager.js';
 import { extractPageMetadata, getPageDimensions, getPageStructure, analyzePagePerformance } from '../utils/pageAnalyzer.js';
-import { GetPageInfoResult } from '../types/enhanced.js';
+import { GetPageInfoOptions, GetPageInfoResult } from '../types/enhanced.js';
 
-export async function getPageInfo(): Promise<GetPageInfoResult> {
+export async function getPageInfo(args: GetPageInfoOptions = {}): Promise<GetPageInfoResult> {
+  const { sections = ['seo'] } = args;
   const page = await getPage();
   const url = page.url();
   

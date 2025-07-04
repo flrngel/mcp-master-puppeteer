@@ -46,12 +46,16 @@ const TOOLS: Tool[] = [
         },
         contentFormat: {
           type: "string",
-          enum: ["markdown", "html", "plain-text"],
+          enum: ["markdown", "html", "plain-text", "structured-json"],
           description: "Format for the page content (default: markdown)"
         },
-        includeRawHtml: {
+        includeMetadata: {
           type: "boolean",
-          description: "Include raw HTML in addition to formatted content (default: false)"
+          description: "Include page metadata (description, OG tags, etc.) (default: false)"
+        },
+        includePerformance: {
+          type: "boolean",
+          description: "Include performance metrics and resource counts (default: false)"
         }
       },
       required: ["url"],
@@ -109,14 +113,6 @@ const TOOLS: Tool[] = [
             }
           },
           description: "Actions to perform before screenshot"
-        },
-        optimizeForSize: {
-          type: "boolean",
-          description: "Optimize image for smaller file size (default: true)"
-        },
-        includeMetadata: {
-          type: "boolean",
-          description: "Include browser and capture metadata (default: true)"
         }
       },
       required: ["name"],
@@ -141,13 +137,9 @@ const TOOLS: Tool[] = [
           enum: ["markdown", "html", "plain-text", "structured-json"],
           description: "Output format for the content (default: markdown)"
         },
-        includeRawHtml: {
+        includeAnalysis: {
           type: "boolean",
-          description: "Include raw HTML in addition to formatted content (default: false)"
-        },
-        preserveFormatting: {
-          type: "boolean",
-          description: "Preserve original formatting when possible (default: true)"
+          description: "Include detailed structure analysis (headings, links, etc.) (default: false)"
         }
       },
     },
@@ -157,7 +149,16 @@ const TOOLS: Tool[] = [
     description: "Get comprehensive page metadata, structure, accessibility, and SEO information",
     inputSchema: {
       type: "object",
-      properties: {},
+      properties: {
+        sections: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: ["seo", "accessibility", "performance", "metadata"]
+          },
+          description: "Sections to include in the analysis (default: [\"seo\"])"
+        }
+      },
     },
   },
   {
@@ -206,10 +207,6 @@ const TOOLS: Tool[] = [
         stopOnError: { 
           type: "boolean", 
           description: "Stop execution on first error (default: false)" 
-        },
-        captureStateAfterEach: { 
-          type: "boolean", 
-          description: "Capture page state after each action (default: false)" 
         }
       },
       required: ["actions"],
@@ -245,7 +242,7 @@ const TOOLS: Tool[] = [
 const server = new Server(
   {
     name: "mcp-master-puppeteer",
-    version: "0.3.0",
+    version: "0.4.0",
   },
   {
     capabilities: {
@@ -276,38 +273,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const result = await screenshotPlus(args as any);
         
         // Store screenshots in resources
-        result.screenshotResults.forEach((screenshot, index) => {
-          const resourceName = `${args.name}_${screenshot.viewportConfiguration.width}px`;
-          screenshots.set(resourceName, screenshot.imageData.rawBase64);
+        result.screenshots.forEach((screenshot, index) => {
+          const resourceName = `${args.name}_${screenshot.viewport.width}px`;
+          const base64Data = screenshot.dataUrl.split(',')[1];
+          screenshots.set(resourceName, base64Data);
         });
         
-        // Return enhanced result with images
+        // Return optimized result with images
         const content: any[] = [{
           type: "text",
           text: JSON.stringify({
-            captureMetadata: result.captureMetadata,
-            errors: result.errors,
-            errorSummary: result.errorSummary,
-            screenshotResults: result.screenshotResults.map(s => ({
-              viewportConfiguration: s.viewportConfiguration,
-              imageDimensions: s.imageDimensions,
-              imageMetrics: s.imageMetrics,
-              captureSettings: s.captureSettings,
-              imageData: {
-                format: s.imageData.format,
-                encoding: s.imageData.encoding,
-                mimeType: s.imageData.mimeType
-              }
-            }))
+            screenshots: result.screenshots.map(s => ({
+              viewport: s.viewport,
+              format: s.format,
+              dimensions: s.dimensions,
+              fullPage: s.fullPage
+            })),
+            ...(result.errors ? { errors: result.errors } : {})
           }, null, 2)
         }];
         
         // Add images
-        result.screenshotResults.forEach(screenshot => {
+        result.screenshots.forEach(screenshot => {
           content.push({
             type: "image",
-            data: screenshot.imageData.rawBase64,
-            mimeType: screenshot.imageData.mimeType,
+            data: screenshot.dataUrl.split(',')[1],
+            mimeType: `image/${screenshot.format}`,
           });
         });
         
@@ -326,7 +317,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "puppeteer_get_page_info": {
-        const result = await getPageInfo();
+        const result = await getPageInfo(args as any);
         return {
           content: [{
             type: "text",

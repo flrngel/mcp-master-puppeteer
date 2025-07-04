@@ -10,7 +10,8 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     waitUntil = 'networkidle0', 
     timeout = 30000,
     contentFormat = 'markdown',
-    includeRawHtml = false
+    includeMetadata = false,
+    includePerformance = false
   } = args;
   
   const page = await getPage();
@@ -44,46 +45,28 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     
     const navigationTimeMs = Date.now() - startTime;
     
-    // Collect all data in parallel
-    const [metadata, performance, rawHtml] = await Promise.all([
-      extractPageMetadata(page),
-      analyzePagePerformance(page, navigationTimeMs),
-      includeRawHtml ? page.content() : Promise.resolve(undefined)
-    ]);
+    // Get page title (always needed)
+    const pageTitle = await page.title();
     
     // Process content based on format
     let contentData: string;
-    let processing: any = { method: 'raw' };
     
     if (contentFormat === 'markdown') {
       const extractedContent = await extractPageContent(page);
       contentData = createContentSummary(extractedContent);
-      processing = {
-        method: 'turndown',
-        options: {
-          headingStyle: 'atx',
-          codeBlockStyle: 'fenced'
-        }
-      };
-      
-      if (rawHtml) {
-        processing.stats = {
-          originalSizeBytes: new TextEncoder().encode(rawHtml).length,
-          processedSizeBytes: new TextEncoder().encode(contentData).length,
-          reductionPercent: 0
-        };
-        processing.stats.reductionPercent = Math.round(
-          ((processing.stats.originalSizeBytes - processing.stats.processedSizeBytes) / 
-           processing.stats.originalSizeBytes) * 100
-        );
-      }
     } else if (contentFormat === 'html') {
       contentData = await page.content();
-      processing = { method: 'raw' };
-    } else {
-      // Plain text extraction
+    } else if (contentFormat === 'plain-text') {
       contentData = await page.evaluate(() => document.body.innerText);
-      processing = { method: 'custom', options: { format: 'plain-text' } };
+    } else {
+      // structured-json format
+      const extracted = await extractPageContent(page);
+      contentData = JSON.stringify({
+        title: pageTitle,
+        headings: extracted.headings,
+        paragraphs: extracted.paragraphs,
+        links: extracted.links
+      }, null, 2);
     }
     
     // Get final URL after redirects
@@ -92,41 +75,47 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     // Stop error collection
     errorCollector.stop();
     
-    // Build the enhanced result
+    // Collect errors if any
+    const errors = errorCollector.getErrors();
+    
+    // Build the optimized result - minimal by default
     const result: NavigateAnalyzeResult = {
-      navigationInfo: {
-        originalUrl: url,
-        finalUrl,
-        statusCode: response.status(),
-        statusText: response.statusText(),
-        redirectChain: redirectChain.length > 0 ? [url, ...redirectChain, finalUrl].filter((v, i, a) => a.indexOf(v) === i) : [],
-        navigationTimeMs
-      },
-      content: {
-        format: contentFormat,
-        data: contentData,
-        processing,
-        ...(includeRawHtml && rawHtml ? { rawHtml } : {})
-      },
-      pageMetadata: {
-        title: metadata.title,
-        description: metadata.description,
-        keywords: metadata.keywords,
-        openGraph: metadata.ogTags,
-        twitterCard: metadata.twitterTags,
-        otherMeta: metadata.otherMeta
-      },
-      performanceMetrics: {
-        loadTimeMs: performance.loadTime,
-        timestamp: performance.timestamp,
-        resourceCounts: {
-          ...performance.resourceCount,
-          fonts: 0 // TODO: Count fonts
-        }
-      },
-      pageErrors: errorCollector.getErrors(),
-      errorSummary: errorCollector.getSummary()
+      url: finalUrl,
+      statusCode: response.status(),
+      title: pageTitle,
+      content: contentData,
+      contentFormat,
     };
+    
+    // Only add errors if there are any
+    if (errors.length > 0) {
+      result.errors = errors;
+    }
+    
+    // Only add metadata if requested
+    if (includeMetadata) {
+      const metadata = await extractPageMetadata(page);
+      result.metadata = {
+        ...(redirectChain.length > 0 && { redirectChain }),
+        ...(metadata.description && { description: metadata.description }),
+        ...(Object.keys(metadata.ogTags).length > 0 && { openGraph: metadata.ogTags }),
+        ...(Object.keys(metadata.twitterTags).length > 0 && { twitterCard: metadata.twitterTags })
+      };
+    }
+    
+    // Only add performance if requested
+    if (includePerformance) {
+      const performance = await analyzePagePerformance(page, navigationTimeMs);
+      result.performance = {
+        loadTimeMs: performance.loadTime,
+        resourceCounts: {
+          total: performance.resourceCount.total,
+          images: performance.resourceCount.images,
+          scripts: performance.resourceCount.scripts,
+          stylesheets: performance.resourceCount.stylesheets
+        }
+      };
+    }
     
     return result;
     

@@ -13,51 +13,20 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
     fullPage = true,
     format = 'jpeg',
     quality = 80,
-    actions = [],
-    optimizeForSize = true,
-    includeMetadata = true
+    actions = []
   } = args;
   
   const page = await getPage();
   const errorCollector = new ErrorCollector(page);
-  const screenshotResults = [];
-  const totalStartTime = Date.now();
-  const actionsPerformed: any[] = [];
+  const screenshots = [];
   
   try {
     // Start error collection
     await errorCollector.start();
     
-    // Get initial page state
-    const pageStateBeforeCapture = {
-      url: page.url(),
-      title: await page.title(),
-      readyState: await page.evaluate(() => document.readyState),
-      scrollPosition: await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }))
-    };
-    
     // Execute any actions before screenshot
     if (actions.length > 0) {
-      for (const action of actions) {
-        const actionStart = Date.now();
-        let success = true;
-        let description = '';
-        
-        try {
-          await executePageActions(page, [action]);
-          description = getActionDescription(action);
-        } catch (error) {
-          success = false;
-          description = `Failed: ${getActionDescription(action)}`;
-        }
-        
-        actionsPerformed.push({
-          type: action.type,
-          description,
-          success,
-          executionTimeMs: Date.now() - actionStart
-        });
-      }
+      await executePageActions(page, actions);
     }
     
     // Take screenshots at each breakpoint
@@ -83,10 +52,8 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
         type: format
       };
       
-      if (format === 'jpeg' && optimizeForSize) {
+      if (format === 'jpeg') {
         screenshotOptions.quality = quality;
-      } else if (format === 'jpeg') {
-        screenshotOptions.quality = 100; // Max quality if not optimizing
       }
       
       // Take screenshot
@@ -101,75 +68,39 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
         screenshot = await page.screenshot(screenshotOptions) as string;
       }
       
-      // Calculate file size
-      const fileSizeBytes = Math.round((screenshot.length * 3) / 4);
-      const fileSizeFormatted = formatFileSize(fileSizeBytes);
-      
       // Calculate aspect ratio
       const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
       const aspectGcd = gcd(dimensions.content.width, dimensions.content.height);
       const aspectRatio = `${dimensions.content.width / aspectGcd}:${dimensions.content.height / aspectGcd}`;
       
-      screenshotResults.push({
-        viewportConfiguration: {
-          width: breakpoint,
-          height: 800,
-          deviceScaleFactor: 1
-        },
-        imageData: {
-          format,
-          encoding: 'base64' as const,
-          mimeType: `image/${format}`,
-          dataUrl: `data:image/${format};base64,${screenshot}`,
-          rawBase64: screenshot
-        },
-        imageDimensions: {
-          capturedWidth: fullPage ? dimensions.content.width : Math.min(dimensions.content.width, breakpoint),
-          capturedHeight: fullPage ? dimensions.content.height : Math.min(dimensions.content.height, 800),
-          viewportWidth: breakpoint,
-          viewportHeight: 800,
-          fullPageHeight: dimensions.content.height,
+      screenshots.push({
+        viewport: { width: breakpoint, height: 800 },
+        dataUrl: `data:image/${format};base64,${screenshot}`,
+        format,
+        dimensions: {
+          width: fullPage ? dimensions.content.width : Math.min(dimensions.content.width, breakpoint),
+          height: fullPage ? dimensions.content.height : Math.min(dimensions.content.height, 800),
           aspectRatio
         },
-        imageMetrics: {
-          fileSizeBytes,
-          fileSizeFormatted,
-          compressionQuality: format === 'jpeg' ? quality : undefined,
-          isOptimized: optimizeForSize,
-          colorDepth: format === 'png' ? 32 : 24
-        },
-        captureSettings: {
-          fullPage,
-          selector,
-          timestamp: new Date().toISOString(),
-          captureTimeMs: Date.now() - captureStart
-        }
+        fullPage
       });
-    }
-    
-    // Get browser info if metadata requested
-    let browserInfo;
-    if (includeMetadata) {
-      browserInfo = {
-        userAgent: await page.evaluate(() => navigator.userAgent),
-        viewport: `${page.viewport()?.width}x${page.viewport()?.height}`
-      };
     }
     
     // Stop error collection
     errorCollector.stop();
     
+    // Get errors if any
+    const errors = errorCollector.getErrors();
+    
+    // Build minimal result
     const result: ScreenshotPlusResult = {
-      screenshotResults,
-      captureMetadata: {
-        totalCaptureTimeMs: Date.now() - totalStartTime,
-        actionsPerformed,
-        pageStateBeforeCapture,
-        ...(browserInfo ? { browserInfo } : {})
-      },
-      errors: errorCollector.getErrors(),
-      errorSummary: errorCollector.getSummary()
+      screenshots
     };
+    
+    // Only add errors if there are any
+    if (errors.length > 0) {
+      result.errors = errors;
+    }
     
     return result;
     
@@ -207,9 +138,4 @@ function getActionDescription(action: any): string {
   }
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
+// Removed formatFileSize - not needed with optimized returns

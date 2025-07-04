@@ -21,6 +21,7 @@
     "dist",
     "ref_repos",
     "tests/integration/tools.test.ts",
-    "tests/test-manual.ts"
+    "tests/test-manual.ts",
+    "tests/test-manual-enhanced.ts"
   ]
 }

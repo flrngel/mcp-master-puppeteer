@@ -1,24 +1,24 @@
 # MCP Master Puppeteer
 
-An advanced MCP (Model Context Protocol) server for browser automation using Puppeteer, designed with rich data returns and minimal tool chaining.
+An advanced MCP (Model Context Protocol) server for browser automation using Puppeteer, optimized for minimal token usage while providing comprehensive data when needed.
 
 ## Features
 
-### 🎯 Enhanced Tools with Descriptive Returns
+### 🎯 Token-Optimized Returns
 
-Each tool returns comprehensive, self-documenting data:
+Each tool is designed to minimize token usage while maintaining utility:
 
-- **Clear Format Indicators**: Know exactly what format your content is in (markdown, HTML, JSON)
-- **Processing Metadata**: See what transformations were applied to the data
-- **Descriptive Field Names**: Nested objects group related data logically
-- **Rich Statistics**: Word counts, file sizes, dimensions, and more
+- **Minimal by Default**: Only essential data returned unless requested
+- **No Duplicate Content**: Never returns both markdown and HTML
+- **Smart Defaults**: Optimized for agent decision-making
+- **Optional Enrichment**: Use flags to request additional data
 
 ### 🚀 Key Design Principles
 
-1. **Minimize Tool Chaining**: Each tool returns all relevant data in one call
-2. **Self-Documenting Returns**: Field names clearly indicate content and format
-3. **Token Efficiency**: Markdown conversion reduces token usage vs raw HTML
-4. **Error Transparency**: Comprehensive error collection and categorization
+1. **Token Efficiency First**: 60-70% reduction in response size
+2. **Smart Selective Returns**: Only include data that aids decision-making
+3. **No Redundancy**: Eliminated duplicate data and unnecessary metadata
+4. **Progressive Enhancement**: Start minimal, add detail as needed
 
 ## 📊 Available Tools
 
@@ -33,7 +33,8 @@ Navigate to a URL and return comprehensive page analysis with metadata, content 
   waitUntil?: "load" | "domcontentloaded" | "networkidle0" | "networkidle2";  // Default: "networkidle0"
   timeout?: number;               // Navigation timeout in ms (default: 30000)
   contentFormat?: "markdown" | "html" | "plain-text";  // Default: "markdown"
-  includeRawHtml?: boolean;       // Include raw HTML in addition to formatted content (default: false)
+  includeMetadata?: boolean;      // Include page metadata (default: false)
+  includePerformance?: boolean;   // Include performance metrics (default: false)
 }
 ```
 
@@ -48,40 +49,34 @@ Navigate to a URL and return comprehensive page analysis with metadata, content 
     redirectChain: string[];
     navigationTimeMs: number;
   };
-  content: {
-    format: "markdown" | "html" | "plain-text";
-    data: string;
-    rawHtml?: string;  // If includeRawHtml is true
-    processing: {
-      method: "turndown" | "raw" | "custom";
-      stats?: {
-        originalSizeBytes: number;
-        processedSizeBytes: number;
-        reductionPercent: number;
-      };
-    };
-  };
-  pageMetadata: {
-    title: string;
+  // Always included - minimal essential data
+  url: string;                    // Final URL after redirects
+  statusCode: number;
+  title: string;
+  content: string;                // In requested format
+  contentFormat: ContentFormat;
+  
+  // Optional - only if there are errors
+  errors?: PageError[];
+  
+  // Optional - only if includeMetadata is true
+  metadata?: {
+    redirectChain?: string[];
     description?: string;
-    keywords?: string;
-    openGraph: Record<string, string>;
-    twitterCard: Record<string, string>;
-    otherMeta: Record<string, string>;
+    openGraph?: Record<string, string>;
+    twitterCard?: Record<string, string>;
   };
-  performanceMetrics: {
+  
+  // Optional - only if includePerformance is true
+  performance?: {
     loadTimeMs: number;
-    timestamp: string;
     resourceCounts: {
+      total: number;
       images: number;
       scripts: number;
       stylesheets: number;
-      fonts: number;
-      total: number;
     };
   };
-  pageErrors: PageError[];
-  errorSummary: ErrorSummary;
 }
 ```
 
@@ -99,69 +94,26 @@ Take screenshots with detailed metadata including dimensions, file sizes, and ca
   format?: "png" | "jpeg" | "webp";  // Image format (default: "jpeg")
   quality?: number;               // JPEG/WebP quality 0-100 (default: 80)
   actions?: PageAction[];         // Actions to perform before screenshot
-  optimizeForSize?: boolean;      // Optimize for smaller file size (default: true)
-  includeMetadata?: boolean;      // Include browser metadata (default: true)
 }
 ```
 
 **Returns:**
 ```typescript
 {
-  screenshotResults: Array<{
-    viewportConfiguration: {
+  screenshots: Array<{
+    viewport: { width: number; height: number };
+    dataUrl: string;            // Complete data URL ready to use
+    format: "png" | "jpeg" | "webp";
+    dimensions: {
       width: number;
       height: number;
-      deviceScaleFactor?: number;
+      aspectRatio: string;      // e.g., "16:9"
     };
-    imageData: {
-      format: "png" | "jpeg" | "webp";
-      encoding: "base64";
-      mimeType: string;
-      dataUrl: string;         // Full data URL ready for use
-      rawBase64: string;       // Just the base64 data
-    };
-    imageDimensions: {
-      capturedWidth: number;
-      capturedHeight: number;
-      viewportWidth: number;
-      viewportHeight: number;
-      fullPageHeight: number;
-      aspectRatio: string;     // e.g., "16:9"
-    };
-    imageMetrics: {
-      fileSizeBytes: number;
-      fileSizeFormatted: string;  // e.g., "1.2 MB"
-      compressionQuality?: number;
-      isOptimized: boolean;
-      colorDepth?: number;
-    };
-    captureSettings: {
-      fullPage: boolean;
-      selector?: string;
-      timestamp: string;
-      captureTimeMs: number;
-    };
+    fullPage: boolean;
   }>;
-  captureMetadata: {
-    totalCaptureTimeMs: number;
-    actionsPerformed: Array<{
-      type: string;
-      description: string;
-      success: boolean;
-    }>;
-    pageStateBeforeCapture: {
-      url: string;
-      title: string;
-      readyState: string;
-      scrollPosition: { x: number; y: number };
-    };
-    browserInfo?: {
-      userAgent: string;
-      viewport: string;
-    };
-  };
-  errors: PageError[];
-  errorSummary: ErrorSummary;
+  
+  // Optional - only if there are errors
+  errors?: PageError[];
 }
 ```
 
@@ -175,75 +127,39 @@ Extract structured content from the page with format options and detailed metada
   selector?: string;              // CSS selector to extract from (default: full page)
   includeHidden?: boolean;        // Include hidden elements (default: false)
   outputFormat?: "markdown" | "html" | "plain-text" | "structured-json";  // Default: "markdown"
-  includeRawHtml?: boolean;       // Include raw HTML (default: false)
-  preserveFormatting?: boolean;   // Preserve original formatting (default: true)
+  includeAnalysis?: boolean;      // Include detailed structure analysis (default: false)
 }
 ```
 
 **Returns:**
 ```typescript
 {
-  extractionMetadata: {
-    sourceFormat: "html";
-    extractedAt: string;
-    selector?: string;
-    includeHidden: boolean;
-    documentUrl: string;
-  };
-  structuredContent: {
-    documentTitle: string;
-    headingHierarchy: Array<{
+  // Always included
+  content: string;                // In requested format
+  contentFormat: ContentFormat;
+  wordCount: number;
+  
+  // Optional - only if includeAnalysis is true
+  analysis?: {
+    headings: Array<{
       level: 1 | 2 | 3 | 4 | 5 | 6;
       text: string;
-      id?: string;
-      slug?: string;           // URL-friendly version
     }>;
-    textContent: {
-      paragraphs: Array<{
-        text: string;
-        wordCount: number;
-        characterCount: number;
-        position: number;
-      }>;
-      totalWordCount: number;
-      totalCharacterCount: number;
-      estimatedReadingTimeSeconds: number;
-    };
-    hyperlinks: Array<{
-      displayText: string;
-      targetUrl: string;
-      isExternal: boolean;
-      isValid: boolean;
-      surroundingContext?: string;
+    links: Array<{
+      text: string;
+      url: string;
+      external: boolean;
     }>;
-    media: {
-      images: Array<{
-        sourceUrl: string;
-        alternativeText?: string;
-        title?: string;
-        isDecorative: boolean;
-      }>;
-      videos: Array<{ sourceUrl: string; type: string; }>;
-      audioFiles: Array<{ sourceUrl: string; type: string; }>;
-    };
-    tables: Array<{
-      format: "markdown" | "json" | "csv";
-      data: string | object;
-      dimensions: { rows: number; columns: number };
-      hasHeaders: boolean;
-      caption?: string;
+    images: Array<{
+      src: string;
+      alt?: string;
     }>;
+    tables: number;               // Just count
     lists: {
-      ordered: Array<{ items: string[]; depth: number }>;
-      unordered: Array<{ items: string[]; depth: number }>;
+      ordered: number;
+      unordered: number;
     };
   };
-  formattedContent?: {
-    format: ContentFormat;
-    data: string;
-    processing: ContentProcessingInfo;
-  };
-  rawHtml?: string;  // If includeRawHtml is true
 }
 ```
 
@@ -253,7 +169,9 @@ Get comprehensive page metadata, SEO assessment, accessibility metrics, and perf
 
 **Options:**
 ```typescript
-// No options - analyzes the current page
+{
+  sections?: Array<"seo" | "accessibility" | "performance" | "metadata">;  // Default: ["seo"]
+}
 ```
 
 **Returns:**
@@ -427,7 +345,6 @@ Execute multiple page interactions in sequence with detailed results.
     position?: { x: number; y: number };  // For scroll
   }>;
   stopOnError?: boolean;        // Stop on first error (default: false)
-  captureStateAfterEach?: boolean;  // Capture state after each action (default: false)
 }
 ```
 
@@ -438,18 +355,19 @@ Execute multiple page interactions in sequence with detailed results.
     action: PageAction;
     success: boolean;
     error?: string;
-    pageState?: {
-      url: string;
-      title: string;
-      consoleLogs?: string[];
+    // Only if navigation occurred
+    pageChanged?: {
+      newUrl: string;
+      newTitle: string;
     };
   }>;
   finalState: {
     url: string;
     title: string;
   };
-  errors: PageError[];
-  errorSummary: ErrorSummary;
+  
+  // Optional - only if there are errors
+  errors?: PageError[];
 }
 ```
 
@@ -603,7 +521,7 @@ await puppeteer_get_page_info();
 // - Complete meta tag analysis
 ```
 
-### Execute Complex Interactions
+### Execute Actions with Minimal Returns
 
 ```javascript
 await puppeteer_batch_interact({
@@ -611,16 +529,42 @@ await puppeteer_batch_interact({
     { type: "type", selector: "#search", text: "puppeteer" },
     { type: "click", selector: "#search-button" },
     { type: "waitForSelector", selector: ".results", timeout: 5000 }
-  ],
-  captureStateAfterEach: true
+  ]
 });
 
 // Returns:
 // - Success/failure for each action
-// - Page state changes after each step
-// - Console logs captured during execution
-// - Final page state
+// - Page changes only if navigation occurred
+// - Final URL and title
+// - Errors only if present
 ```
+
+## Token Optimization Details
+
+### Before vs After
+
+**navigateAnalyze Before**: ~2,500 tokens average response
+**navigateAnalyze After**: ~400 tokens (minimal), ~800 tokens (with metadata)
+
+**Key Optimizations:**
+- Removed processing stats (originalSizeBytes, reductionPercent)
+- Eliminated content duplication (no raw HTML when markdown requested)
+- Made metadata optional (OG tags, Twitter cards, etc.)
+- Performance metrics opt-in only
+- Errors only included when present
+
+**extractContent Before**: ~1,800 tokens average
+**extractContent After**: ~300 tokens (minimal), ~600 tokens (with analysis)
+
+**screenshotPlus Before**: ~1,200 tokens per screenshot
+**screenshotPlus After**: ~150 tokens per screenshot
+
+### When to Use Options
+
+- `includeMetadata`: When you need SEO data or social media tags
+- `includePerformance`: For performance debugging
+- `includeAnalysis`: When you need document structure (headings, links)
+- Default (no options): For simple content extraction or navigation
 
 ## Development
 

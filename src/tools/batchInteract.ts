@@ -1,47 +1,13 @@
 import { getPage, executePageActions } from '../utils/browserManager.js';
 import { ErrorCollector } from '../utils/errorCollector.js';
 import { PageAction } from '../types/index.js';
+import { BatchInteractOptions, BatchInteractResult } from '../types/enhanced.js';
 
-interface BatchInteractArgs {
-  actions: PageAction[];
-  stopOnError?: boolean;
-  captureStateAfterEach?: boolean;
-}
-
-interface ActionResult {
-  action: PageAction;
-  success: boolean;
-  error?: string;
-  pageState?: {
-    url: string;
-    title: string;
-    consoleLogs?: string[];
-  };
-}
-
-interface BatchInteractResult {
-  results: ActionResult[];
-  finalState: {
-    url: string;
-    title: string;
-  };
-  errors: any[];
-  errorSummary: any;
-}
-
-export async function batchInteract(args: BatchInteractArgs): Promise<BatchInteractResult> {
-  const { actions, stopOnError = false, captureStateAfterEach = false } = args;
+export async function batchInteract(args: BatchInteractOptions): Promise<BatchInteractResult> {
+  const { actions, stopOnError = false } = args;
   const page = await getPage();
   const errorCollector = new ErrorCollector(page);
-  const results: ActionResult[] = [];
-  const consoleLogs: string[] = [];
-  
-  // Set up console listener if capturing state
-  if (captureStateAfterEach) {
-    page.on('console', msg => {
-      consoleLogs.push(`[${msg.type()}] ${msg.text()}`);
-    });
-  }
+  const results: any[] = [];
   
   try {
     // Start error collection
@@ -49,28 +15,28 @@ export async function batchInteract(args: BatchInteractArgs): Promise<BatchInter
     
     // Execute each action
     for (const action of actions) {
-      const actionResult: ActionResult = {
+      const previousUrl = page.url();
+      const previousTitle = await page.title();
+      
+      const actionResult: any = {
         action,
         success: false
       };
       
       try {
-        // Clear console logs for this action
-        if (captureStateAfterEach) {
-          consoleLogs.length = 0;
-        }
-        
         // Execute single action
         await executePageActions(page, [action]);
         
         actionResult.success = true;
         
-        // Capture state if requested
-        if (captureStateAfterEach) {
-          actionResult.pageState = {
-            url: page.url(),
-            title: await page.title(),
-            consoleLogs: [...consoleLogs]
+        // Check if page changed
+        const currentUrl = page.url();
+        const currentTitle = await page.title();
+        
+        if (currentUrl !== previousUrl || currentTitle !== previousTitle) {
+          actionResult.pageChanged = {
+            newUrl: currentUrl,
+            newTitle: currentTitle
           };
         }
         
@@ -96,12 +62,21 @@ export async function batchInteract(args: BatchInteractArgs): Promise<BatchInter
     // Stop error collection
     errorCollector.stop();
     
-    return {
+    // Get errors if any
+    const errors = errorCollector.getErrors();
+    
+    // Build minimal result
+    const result: BatchInteractResult = {
       results,
-      finalState,
-      errors: errorCollector.getErrors(),
-      errorSummary: errorCollector.getSummary()
+      finalState
     };
+    
+    // Only add errors if there are any
+    if (errors.length > 0) {
+      result.errors = errors;
+    }
+    
+    return result;
     
   } catch (error) {
     errorCollector.stop();

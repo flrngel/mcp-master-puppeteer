@@ -7,170 +7,92 @@ export async function extractContent(args: ExtractContentOptions = {}): Promise<
     selector, 
     includeHidden = false,
     outputFormat = 'markdown',
-    includeRawHtml = false,
-    preserveFormatting = true
+    includeAnalysis = false
   } = args;
   
   const page = await getPage();
-  const url = page.url();
-  const timestamp = new Date().toISOString();
   
-  // Get raw HTML if requested or needed for processing
-  let rawHtml: string | undefined;
-  if (includeRawHtml || outputFormat === 'html') {
+  // Extract content based on selector
+  let content: string;
+  let wordCount = 0;
+  
+  if (outputFormat === 'html') {
+    // Get raw HTML
     if (selector) {
-      rawHtml = await page.$eval(selector, el => el.outerHTML);
+      content = await page.$eval(selector, el => el.outerHTML);
     } else {
-      rawHtml = await page.content();
+      content = await page.content();
     }
-  }
-  
-  // Extract structured content
-  const extractedContent = await extractPageContent(page);
-  
-  // Calculate text statistics
-  let totalWordCount = 0;
-  let totalCharacterCount = 0;
-  const paragraphsWithStats = extractedContent.paragraphs.map((text, index) => {
-    const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
-    const characterCount = text.length;
-    totalWordCount += wordCount;
-    totalCharacterCount += characterCount;
-    return {
-      text,
-      wordCount,
-      characterCount,
-      position: index
-    };
-  });
-  
-  // Calculate reading time (average 200 words per minute)
-  const estimatedReadingTimeSeconds = Math.ceil((totalWordCount / 200) * 60);
-  
-  // Process links
-  const hyperlinks = extractedContent.links.map(link => ({
-    displayText: link.text,
-    targetUrl: link.href,
-    isExternal: !link.href.startsWith(new URL(url).origin),
-    isValid: link.href.startsWith('http') || link.href.startsWith('https'),
-    surroundingContext: link.context
-  }));
-  
-  // Process images
-  const images = extractedContent.images.map(img => ({
-    sourceUrl: img.src,
-    alternativeText: img.alt,
-    title: img.title,
-    isDecorative: !img.alt || img.alt.trim() === '',
-    dimensions: undefined // TODO: Get actual dimensions if needed
-  }));
-  
-  // Process tables
-  const tables = extractedContent.tables.map(table => ({
-    format: 'markdown' as const,
-    data: table.markdown,
-    dimensions: {
-      rows: table.markdown.split('\n').length - 2, // Minus header and separator
-      columns: table.markdown.split('\n')[0]?.split('|').length - 2 || 0
-    },
-    hasHeaders: true,
-    caption: table.summary
-  }));
-  
-  // Create formatted content based on output format
-  let formattedData: string;
-  let processing: any;
-  
-  if (outputFormat === 'markdown') {
-    formattedData = `# ${extractedContent.title}\n\n`;
-    
-    // Add headings
-    if (extractedContent.headings.length > 0) {
-      extractedContent.headings.forEach(h => {
-        formattedData += `${'#'.repeat(h.level)} ${h.text}\n\n`;
-      });
-    }
-    
-    // Add paragraphs
-    paragraphsWithStats.forEach(p => {
-      formattedData += `${p.text}\n\n`;
-    });
-    
-    processing = {
-      method: 'turndown',
-      options: {
-        preserveFormatting,
-        headingStyle: 'atx',
-        codeBlockStyle: 'fenced'
-      }
-    };
-  } else if (outputFormat === 'plain-text') {
-    formattedData = extractedContent.title + '\n\n';
-    formattedData += paragraphsWithStats.map(p => p.text).join('\n\n');
-    processing = {
-      method: 'custom',
-      options: { format: 'plain-text' }
-    };
-  } else if (outputFormat === 'html' && rawHtml) {
-    formattedData = rawHtml;
-    processing = { method: 'raw' };
+    // Rough word count for HTML
+    const textContent = await page.evaluate((sel: string | undefined) => {
+      const el = sel ? document.querySelector(sel) : document.body;
+      return el ? (el as HTMLElement).innerText : '';
+    }, selector);
+    wordCount = textContent.split(/\s+/).filter((word: string) => word.length > 0).length;
   } else {
-    // Structured JSON format
-    formattedData = JSON.stringify({
-      title: extractedContent.title,
-      headings: extractedContent.headings,
-      paragraphs: paragraphsWithStats,
-      links: hyperlinks,
-      images: images,
-      tables: tables
-    }, null, 2);
-    processing = {
-      method: 'custom',
-      options: { format: 'structured-json' }
-    };
+    // Extract structured content for other formats
+    const extractedContent = await extractPageContent(page);
+    wordCount = extractedContent.paragraphs.join(' ').split(/\s+/).filter((word: string) => word.length > 0).length;
+    
+    if (outputFormat === 'markdown') {
+      // Convert to markdown
+      content = `# ${extractedContent.title}\n\n`;
+      if (extractedContent.headings.length > 0) {
+        extractedContent.headings.forEach(h => {
+          content += `${'#'.repeat(h.level)} ${h.text}\n\n`;
+        });
+      }
+      extractedContent.paragraphs.forEach(p => {
+        content += `${p}\n\n`;
+      });
+    } else if (outputFormat === 'plain-text') {
+      // Plain text
+      content = extractedContent.title + '\n\n';
+      content += extractedContent.paragraphs.join('\n\n');
+    } else {
+      // structured-json
+      content = JSON.stringify({
+        title: extractedContent.title,
+        headings: extractedContent.headings,
+        paragraphs: extractedContent.paragraphs,
+        wordCount
+      }, null, 2);
+    }
   }
   
+  // Build minimal result
   const result: ExtractedContentResult = {
-    extractionMetadata: {
-      sourceFormat: 'html',
-      extractedAt: timestamp,
-      selector,
-      includeHidden,
-      documentUrl: url
-    },
-    structuredContent: {
-      documentTitle: extractedContent.title,
-      headingHierarchy: extractedContent.headings.map(h => ({
-        level: h.level as 1 | 2 | 3 | 4 | 5 | 6,
-        text: h.text,
-        id: undefined,
-        slug: h.text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      })),
-      textContent: {
-        paragraphs: paragraphsWithStats,
-        totalWordCount,
-        totalCharacterCount,
-        estimatedReadingTimeSeconds
-      },
-      hyperlinks,
-      media: {
-        images,
-        videos: [], // TODO: Extract videos
-        audioFiles: [] // TODO: Extract audio
-      },
-      tables,
-      lists: {
-        ordered: [], // TODO: Extract ordered lists
-        unordered: [] // TODO: Extract unordered lists
-      }
-    },
-    formattedContent: {
-      format: outputFormat,
-      data: formattedData,
-      processing
-    },
-    ...(includeRawHtml && rawHtml ? { rawHtml } : {})
+    content,
+    contentFormat: outputFormat,
+    wordCount
   };
+  
+  // Add analysis if requested
+  if (includeAnalysis && outputFormat !== 'html') {
+    const extractedContent = await extractPageContent(page);
+    const url = page.url();
+    
+    result.analysis = {
+      headings: extractedContent.headings.map(h => ({
+        level: h.level as 1 | 2 | 3 | 4 | 5 | 6,
+        text: h.text
+      })),
+      links: extractedContent.links.map(link => ({
+        text: link.text,
+        url: link.href,
+        external: !link.href.startsWith(new URL(url).origin)
+      })),
+      images: extractedContent.images.map(img => ({
+        src: img.src,
+        alt: img.alt || undefined
+      })),
+      tables: extractedContent.tables.length,
+      lists: {
+        ordered: 0, // TODO: Count if needed
+        unordered: 0 // TODO: Count if needed
+      }
+    };
+  }
   
   return result;
 }
