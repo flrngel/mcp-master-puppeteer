@@ -72,7 +72,7 @@ export async function executePageActions(page: Page, actions: any[]): Promise<vo
         break;
         
       case 'wait':
-        await page.waitForTimeout(action.duration || 1000);
+        await new Promise(resolve => setTimeout(resolve, action.duration || 1000));
         break;
         
       case 'waitForSelector':
@@ -106,6 +106,6 @@ export async function executePageActions(page: Page, actions: any[]): Promise<vo
     }
     
     // Small delay between actions for stability
-    await page.waitForTimeout(100);
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 }

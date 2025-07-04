@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { extractPageContent, createContentSummary, htmlToMarkdown } from '../../src/utils/htmlToMarkdown';
-import { ExtractedContent } from '../../src/types';
+import { extractPageContent, createContentSummary, htmlToMarkdown } from '../../src/utils/htmlToMarkdown.js';
+import { ExtractedContent } from '../../src/types/index.js';
 
 describe('htmlToMarkdown utilities', () => {
   describe('htmlToMarkdown', () => {

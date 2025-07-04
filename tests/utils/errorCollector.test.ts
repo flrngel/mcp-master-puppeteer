@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { ErrorCollector } from '../../src/utils/errorCollector';
-import { PageError } from '../../src/types';
+import { ErrorCollector } from '../../src/utils/errorCollector.js';
+import { PageError } from '../../src/types/index.js';
 
 describe('ErrorCollector', () => {
   let mockPage: any;

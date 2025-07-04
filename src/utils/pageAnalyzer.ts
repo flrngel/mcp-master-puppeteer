@@ -138,32 +138,39 @@ export async function analyzeForms(page: Page): Promise<FormInfo[]> {
 }
 
 export async function getPageStructure(page: Page): Promise<string> {
-  const structure = await page.evaluate(() => {
-    const outline: string[] = [];
+  // Simplified version to avoid transpilation issues
+  return await page.evaluate(() => {
+    const lines: string[] = [];
     
-    function traverse(element: Element, depth: number = 0): void {
-      const tagName = element.tagName.toLowerCase();
-      const indent = '  '.repeat(depth);
+    if (document.body) {
+      lines.push('body');
       
-      // Only include structural elements
-      const structuralTags = ['header', 'nav', 'main', 'section', 'article', 'aside', 'footer', 'div', 'form'];
-      if (!structuralTags.includes(tagName)) return;
+      // Find main structural elements
+      const main = document.querySelector('main');
+      if (main) lines.push('  main');
       
-      let descriptor = tagName;
-      if (element.id) descriptor += `#${element.id}`;
-      if (element.className) descriptor += `.${element.className.split(' ').join('.')}`;
+      const header = document.querySelector('header');
+      if (header) lines.push('  header');
       
-      outline.push(`${indent}${descriptor}`);
+      const nav = document.querySelector('nav');
+      if (nav) lines.push('  nav');
       
-      // Traverse children
-      Array.from(element.children).forEach(child => {
-        traverse(child, depth + 1);
-      });
+      const footer = document.querySelector('footer');
+      if (footer) lines.push('  footer');
+      
+      // Count forms
+      const forms = document.querySelectorAll('form');
+      if (forms.length > 0) {
+        lines.push(`  ${forms.length} form(s)`);
+      }
+      
+      // Count sections
+      const sections = document.querySelectorAll('section');
+      if (sections.length > 0) {
+        lines.push(`  ${sections.length} section(s)`);
+      }
     }
     
-    traverse(document.body, 0);
-    return outline;
+    return lines.join('\n');
   });
-  
-  return structure.join('\n');
 }

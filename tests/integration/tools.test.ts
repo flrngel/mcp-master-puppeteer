@@ -4,11 +4,11 @@ import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer';
-import { navigateAnalyze } from '../../src/tools/navigateAnalyze';
-import { extractContent } from '../../src/tools/extractContent';
-import { analyzeForms } from '../../src/tools/analyzeForms';
-import { getPageInfo } from '../../src/tools/getPageInfo';
-import { batchInteract } from '../../src/tools/batchInteract';
+import { navigateAnalyze } from '../../src/tools/navigateAnalyze.js';
+import { extractContent } from '../../src/tools/extractContent.js';
+import { analyzeForms } from '../../src/tools/analyzeForms.js';
+import { getPageInfo } from '../../src/tools/getPageInfo.js';
+import { batchInteract } from '../../src/tools/batchInteract.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -55,7 +55,7 @@ describe('MCP Tools Integration Tests', () => {
 
   beforeEach(async () => {
     // Override the browserManager module to use our test page
-    const browserManager = await import('../../src/utils/browserManager');
+    const browserManager = await import('../../src/utils/browserManager.js');
     (browserManager as any).getPage = jest.fn().mockResolvedValue(page);
     (browserManager as any).getBrowser = jest.fn().mockResolvedValue(browser);
   });
@@ -143,7 +143,7 @@ describe('MCP Tools Integration Tests', () => {
       expect(result.summary.inputTypes['email']).toBe(1);
       expect(result.summary.requiredFields).toBeGreaterThan(0);
 
-      const loginForm = result.forms.find(f => f.id === 'login-form');
+      const loginForm = result.forms.find((f: any) => f.id === 'login-form');
       expect(loginForm).toBeDefined();
       expect(loginForm?.action).toContain('/login');
       expect(loginForm?.method).toBe('post');

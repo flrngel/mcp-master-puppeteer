@@ -50,7 +50,7 @@ export async function screenshotPlus(args: ScreenshotPlusArgs): Promise<Screensh
       });
       
       // Wait for any viewport-based changes to settle
-      await page.waitForTimeout(500);
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Get dimensions
       const dimensions = await getPageDimensions(page);

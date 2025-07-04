@@ -227,7 +227,7 @@ const server = new Server(
 
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name, arguments: args = {} } = request.params;
 
   try {
     switch (name) {
@@ -325,14 +325,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // Simple backward compatibility tools
       case "puppeteer_click": {
+        const { selector } = args as { selector: string };
         const result = await batchInteract({
-          actions: [{ type: "click", selector: args.selector }]
+          actions: [{ type: "click", selector }]
         });
         return {
           content: [{
             type: "text",
             text: result.results[0].success 
-              ? `Clicked: ${args.selector}` 
+              ? `Clicked: ${selector}` 
               : `Failed to click: ${result.results[0].error}`
           }],
           isError: !result.results[0].success,
@@ -340,14 +341,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "puppeteer_fill": {
+        const { selector, value } = args as { selector: string; value: string };
         const result = await batchInteract({
-          actions: [{ type: "type", selector: args.selector, text: args.value }]
+          actions: [{ type: "type", selector, text: value }]
         });
         return {
           content: [{
             type: "text",
             text: result.results[0].success 
-              ? `Filled ${args.selector} with: ${args.value}` 
+              ? `Filled ${selector} with: ${value}` 
               : `Failed to fill: ${result.results[0].error}`
           }],
           isError: !result.results[0].success,
