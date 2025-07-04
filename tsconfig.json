@@ -19,6 +19,8 @@
   "exclude": [
     "node_modules",
     "dist",
-    "ref_repos"
+    "ref_repos",
+    "tests/integration/tools.test.ts",
+    "tests/test-manual.ts"
   ]
 }

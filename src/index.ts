@@ -27,7 +27,7 @@ const screenshots = new Map<string, string>();
 const TOOLS: Tool[] = [
   {
     name: "puppeteer_navigate_analyze",
-    description: "Navigate to a URL and return comprehensive page analysis including metadata, content summary, and errors",
+    description: "Navigate to a URL and return comprehensive page analysis with metadata, content (in specified format), and errors",
     inputSchema: {
       type: "object",
       properties: {
@@ -43,6 +43,15 @@ const TOOLS: Tool[] = [
         timeout: { 
           type: "number", 
           description: "Maximum navigation time in milliseconds (default: 30000)" 
+        },
+        contentFormat: {
+          type: "string",
+          enum: ["markdown", "html", "plain-text"],
+          description: "Format for the page content (default: markdown)"
+        },
+        includeRawHtml: {
+          type: "boolean",
+          description: "Include raw HTML in addition to formatted content (default: false)"
         }
       },
       required: ["url"],
@@ -50,7 +59,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: "puppeteer_screenshot_plus",
-    description: "Take screenshots with rich metadata, multiple breakpoints, and page information",
+    description: "Take screenshots with detailed metadata including dimensions, file size, and capture settings",
     inputSchema: {
       type: "object",
       properties: {
@@ -73,12 +82,12 @@ const TOOLS: Tool[] = [
         },
         format: { 
           type: "string",
-          enum: ["png", "jpeg"],
+          enum: ["png", "jpeg", "webp"],
           description: "Image format (default: jpeg)" 
         },
         quality: { 
           type: "number", 
-          description: "JPEG quality 0-100 (default: 80)" 
+          description: "JPEG/WebP quality 0-100 (default: 80)" 
         },
         actions: {
           type: "array",
@@ -100,6 +109,14 @@ const TOOLS: Tool[] = [
             }
           },
           description: "Actions to perform before screenshot"
+        },
+        optimizeForSize: {
+          type: "boolean",
+          description: "Optimize image for smaller file size (default: true)"
+        },
+        includeMetadata: {
+          type: "boolean",
+          description: "Include browser and capture metadata (default: true)"
         }
       },
       required: ["name"],
@@ -107,7 +124,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: "puppeteer_extract_content",
-    description: "Extract structured content from the page as markdown",
+    description: "Extract structured content from the page with format options and detailed metadata",
     inputSchema: {
       type: "object",
       properties: {
@@ -118,6 +135,19 @@ const TOOLS: Tool[] = [
         includeHidden: { 
           type: "boolean", 
           description: "Include hidden elements (default: false)" 
+        },
+        outputFormat: {
+          type: "string",
+          enum: ["markdown", "html", "plain-text", "structured-json"],
+          description: "Output format for the content (default: markdown)"
+        },
+        includeRawHtml: {
+          type: "boolean",
+          description: "Include raw HTML in addition to formatted content (default: false)"
+        },
+        preserveFormatting: {
+          type: "boolean",
+          description: "Preserve original formatting when possible (default: true)"
         }
       },
     },
@@ -215,7 +245,7 @@ const TOOLS: Tool[] = [
 const server = new Server(
   {
     name: "mcp-master-puppeteer",
-    version: "0.2.0",
+    version: "0.3.0",
   },
   {
     capabilities: {
@@ -246,33 +276,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const result = await screenshotPlus(args as any);
         
         // Store screenshots in resources
-        result.screenshots.forEach((screenshot, index) => {
-          const resourceName = `${args.name}_${screenshot.breakpoint}px`;
-          screenshots.set(resourceName, screenshot.image);
+        result.screenshotResults.forEach((screenshot, index) => {
+          const resourceName = `${args.name}_${screenshot.viewportConfiguration.width}px`;
+          screenshots.set(resourceName, screenshot.imageData.rawBase64);
         });
         
-        // Return result with images
+        // Return enhanced result with images
         const content: any[] = [{
           type: "text",
           text: JSON.stringify({
-            performance: result.performance,
+            captureMetadata: result.captureMetadata,
             errors: result.errors,
             errorSummary: result.errorSummary,
-            screenshots: result.screenshots.map(s => ({
-              breakpoint: s.breakpoint,
-              format: s.format,
-              dimensions: s.dimensions,
-              fileSize: s.fileSize
+            screenshotResults: result.screenshotResults.map(s => ({
+              viewportConfiguration: s.viewportConfiguration,
+              imageDimensions: s.imageDimensions,
+              imageMetrics: s.imageMetrics,
+              captureSettings: s.captureSettings,
+              imageData: {
+                format: s.imageData.format,
+                encoding: s.imageData.encoding,
+                mimeType: s.imageData.mimeType
+              }
             }))
           }, null, 2)
         }];
         
         // Add images
-        result.screenshots.forEach(screenshot => {
+        result.screenshotResults.forEach(screenshot => {
           content.push({
             type: "image",
-            data: screenshot.image.split(',')[1], // Remove data:image/... prefix
-            mimeType: `image/${screenshot.format}`,
+            data: screenshot.imageData.rawBase64,
+            mimeType: screenshot.imageData.mimeType,
           });
         });
         

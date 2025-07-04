@@ -1,6 +1,6 @@
 {
   "name": "mcp-master-puppeteer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for browser automation using Puppeteer with configurable options",
   "license": "MIT",
   "author": "flrngel",
