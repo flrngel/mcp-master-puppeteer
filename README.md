@@ -452,40 +452,59 @@ Add to your MCP settings:
 
 ## Usage Examples
 
-### Navigate with Format Options
+### Navigate with Smart Defaults
 
 ```javascript
-// Get markdown summary
+// Default includes basic metadata
+await puppeteer_navigate_analyze({
+  url: "https://example.com"
+});
+
+// Returns:
+// {
+//   url: "https://example.com",
+//   statusCode: 200,
+//   title: "Example Domain",
+//   content: "# Example Domain\n\nThis domain is...",
+//   contentFormat: "markdown",
+//   metadata: {
+//     description: "Example Domain for use in examples",
+//     ogImage: "https://example.com/image.jpg"
+//   }
+// }
+
+// Disable metadata for minimal response
 await puppeteer_navigate_analyze({
   url: "https://example.com",
-  contentFormat: "markdown",
-  includeRawHtml: false
+  includeMetadata: false
 });
-
-// Returns comprehensive data with:
-// - Navigation details and redirects
-// - Content in markdown format with processing stats
-// - Page metadata (title, description, OG tags)
-// - Performance metrics and resource counts
-// - All errors encountered during navigation
 ```
 
-### Extract Content in Different Formats
+### Extract Content Efficiently
 
 ```javascript
-// Get structured JSON
+// Structured JSON includes analysis by default
 await puppeteer_extract_content({
-  outputFormat: "structured-json",
-  includeRawHtml: false
+  outputFormat: "structured-json"
 });
 
-// Returns organized data with:
-// - Word counts and reading time
-// - Heading hierarchy with slugs
-// - Links with validation and context
-// - Images with accessibility info
-// - Tables as markdown
-// - Detailed extraction metadata
+// Returns:
+// {
+//   content: "{...json with headings, paragraphs...}",
+//   contentFormat: "structured-json",
+//   wordCount: 150,
+//   analysis: {  // Included automatically for structured-json
+//     headings: [...],
+//     links: [...],
+//     images: [...]
+//   }
+// }
+
+// Markdown without analysis
+await puppeteer_extract_content({
+  outputFormat: "markdown",
+  includeAnalysis: false  // Default for non-structured formats
+});
 ```
 
 ### Capture Screenshots with Metadata
@@ -544,12 +563,13 @@ await puppeteer_batch_interact({
 ### Before vs After
 
 **navigateAnalyze Before**: ~2,500 tokens average response
-**navigateAnalyze After**: ~400 tokens (minimal), ~800 tokens (with metadata)
+**navigateAnalyze After**: ~600 tokens (default with basic metadata), ~400 tokens (minimal)
 
 **Key Optimizations:**
+- Smart defaults: Basic metadata included, full details opt-in
 - Removed processing stats (originalSizeBytes, reductionPercent)
 - Eliminated content duplication (no raw HTML when markdown requested)
-- Made metadata optional (OG tags, Twitter cards, etc.)
+- Only essential metadata by default (description, ogImage)
 - Performance metrics opt-in only
 - Errors only included when present
 
@@ -561,10 +581,16 @@ await puppeteer_batch_interact({
 
 ### When to Use Options
 
-- `includeMetadata`: When you need SEO data or social media tags
-- `includePerformance`: For performance debugging
-- `includeAnalysis`: When you need document structure (headings, links)
-- Default (no options): For simple content extraction or navigation
+**Default Behavior:**
+- `navigateAnalyze`: Includes basic metadata (description, ogImage)
+- `extractContent`: Includes analysis for structured-json format
+- `getPageInfo`: Returns SEO and metadata sections
+
+**Override Defaults:**
+- `includeMetadata: false`: For truly minimal navigation
+- `includePerformance: true`: For debugging performance issues
+- `includeAnalysis: false`: Disable analysis for structured-json
+- `sections: ['seo']`: Limit getPageInfo to specific sections
 
 ## Development
 

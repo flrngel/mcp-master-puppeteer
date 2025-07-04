@@ -13,8 +13,8 @@ export interface NavigateAnalyzeOptions {
   waitUntil?: "load" | "domcontentloaded" | "networkidle0" | "networkidle2";
   timeout?: number;
   contentFormat?: ContentFormat;
-  includeMetadata?: boolean; // Only return basic navigation info + content unless true
-  includePerformance?: boolean; // Skip performance metrics unless requested
+  includeMetadata?: boolean; // Include basic metadata - description, ogImage (default: true)
+  includePerformance?: boolean; // Include performance metrics (default: false)
 }
 
 export interface NavigateAnalyzeResult {
@@ -28,12 +28,11 @@ export interface NavigateAnalyzeResult {
   // Optional - only if there are errors
   errors?: PageError[];
   
-  // Optional - only if includeMetadata is true
+  // Optional - basic metadata included by default (set includeMetadata: false to omit)
   metadata?: {
-    redirectChain?: string[];
     description?: string;
-    openGraph?: Record<string, string>;
-    twitterCard?: Record<string, string>;
+    ogImage?: string;
+    redirectChain?: string[];
   };
   
   // Optional - only if includePerformance is true
@@ -53,7 +52,7 @@ export interface ExtractContentOptions {
   selector?: string;
   includeHidden?: boolean;
   outputFormat?: ContentFormat;
-  includeAnalysis?: boolean; // Include detailed structure analysis (headings, links, etc.)
+  includeAnalysis?: boolean; // Include structure analysis (default: true for structured-json)
 }
 
 export interface ExtractedContentResult {
@@ -115,7 +114,7 @@ export interface ScreenshotPlusResult {
 
 // Enhanced GetPageInfo types
 export interface GetPageInfoOptions {
-  sections?: Array<"seo" | "accessibility" | "performance" | "metadata">; // Default: ["seo"]
+  sections?: Array<"seo" | "accessibility" | "performance" | "metadata">; // Default: ["seo", "metadata"]
 }
 
 export interface GetPageInfoResult {

@@ -3,7 +3,7 @@ import { extractPageMetadata, getPageDimensions, getPageStructure, analyzePagePe
 import { GetPageInfoOptions, GetPageInfoResult } from '../types/enhanced.js';
 
 export async function getPageInfo(args: GetPageInfoOptions = {}): Promise<GetPageInfoResult> {
-  const { sections = ['seo'] } = args;
+  const { sections = ['seo', 'metadata'] } = args;
   const page = await getPage();
   const url = page.url();
   

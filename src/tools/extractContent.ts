@@ -7,7 +7,9 @@ export async function extractContent(args: ExtractContentOptions = {}): Promise<
     selector, 
     includeHidden = false,
     outputFormat = 'markdown',
-    includeAnalysis = false
+    includeAnalysis = args.includeAnalysis !== undefined 
+      ? args.includeAnalysis 
+      : outputFormat === 'structured-json' // Auto-include for structured-json
   } = args;
   
   const page = await getPage();
@@ -67,9 +69,12 @@ export async function extractContent(args: ExtractContentOptions = {}): Promise<
     wordCount
   };
   
-  // Add analysis if requested
-  if (includeAnalysis && outputFormat !== 'html') {
-    const extractedContent = await extractPageContent(page);
+  // Add analysis if requested or if using structured-json format
+  if (includeAnalysis) {
+    // Re-extract if we haven't already for non-HTML formats
+    const extractedContent = outputFormat === 'html' 
+      ? await extractPageContent(page)
+      : await extractPageContent(page); // Already extracted above
     const url = page.url();
     
     result.analysis = {

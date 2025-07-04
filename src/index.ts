@@ -51,7 +51,7 @@ const TOOLS: Tool[] = [
         },
         includeMetadata: {
           type: "boolean",
-          description: "Include page metadata (description, OG tags, etc.) (default: false)"
+          description: "Include basic metadata - description, ogImage (default: true)"
         },
         includePerformance: {
           type: "boolean",
@@ -139,7 +139,7 @@ const TOOLS: Tool[] = [
         },
         includeAnalysis: {
           type: "boolean",
-          description: "Include detailed structure analysis (headings, links, etc.) (default: false)"
+          description: "Include structure analysis (default: true for structured-json, false otherwise)"
         }
       },
     },
@@ -156,7 +156,7 @@ const TOOLS: Tool[] = [
             type: "string",
             enum: ["seo", "accessibility", "performance", "metadata"]
           },
-          description: "Sections to include in the analysis (default: [\"seo\"])"
+          description: "Sections to include in the analysis (default: [\"seo\", \"metadata\"])"
         }
       },
     },

@@ -10,7 +10,7 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     waitUntil = 'networkidle0', 
     timeout = 30000,
     contentFormat = 'markdown',
-    includeMetadata = false,
+    includeMetadata = true,  // Default to true for basic metadata
     includePerformance = false
   } = args;
   
@@ -92,15 +92,29 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
       result.errors = errors;
     }
     
-    // Only add metadata if requested
+    // Add basic metadata by default
     if (includeMetadata) {
       const metadata = await extractPageMetadata(page);
-      result.metadata = {
-        ...(redirectChain.length > 0 && { redirectChain }),
-        ...(metadata.description && { description: metadata.description }),
-        ...(Object.keys(metadata.ogTags).length > 0 && { openGraph: metadata.ogTags }),
-        ...(Object.keys(metadata.twitterTags).length > 0 && { twitterCard: metadata.twitterTags })
-      };
+      // Only include the most useful metadata
+      const basicMetadata: any = {};
+      
+      if (metadata.description) {
+        basicMetadata.description = metadata.description;
+      }
+      
+      // Only include essential OG tags
+      if (metadata.ogTags['og:image']) {
+        basicMetadata.ogImage = metadata.ogTags['og:image'];
+      }
+      
+      if (redirectChain.length > 0) {
+        basicMetadata.redirectChain = redirectChain;
+      }
+      
+      // Only add metadata if we have any
+      if (Object.keys(basicMetadata).length > 0) {
+        result.metadata = basicMetadata;
+      }
     }
     
     // Only add performance if requested
