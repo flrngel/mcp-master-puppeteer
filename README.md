@@ -96,6 +96,7 @@ Take screenshots optimized for LLM processing with automatic resizing to stay un
   actions?: PageAction[];         // Actions to perform before screenshot
   resizeForLLM?: boolean;         // Resize to stay under max dimension (default: true)
   maxDimension?: number;          // Max width or height. Default: 8000 (single), 2000 (multiple)
+  resizeStrategy?: "cut" | "resize";  // How to handle oversized images (default: "cut")
 }
 ```
 
@@ -541,6 +542,22 @@ await puppeteer_screenshot_plus({
   breakpoints: [1920],
   resizeForLLM: false  // Keep original size
 });
+
+// Use cut strategy (default) - crops image to fit
+await puppeteer_screenshot_plus({
+  name: "cropped",
+  breakpoints: [1920],
+  maxDimension: 800,
+  resizeStrategy: "cut"  // Crops to 800x800 max
+});
+
+// Use resize strategy - scales down viewport
+await puppeteer_screenshot_plus({
+  name: "scaled",
+  breakpoints: [1920],
+  maxDimension: 800,
+  resizeStrategy: "resize"  // Scales viewport to fit within 800px
+});
 ```
 
 ### Analyze Page for SEO
@@ -602,6 +619,12 @@ Automatically resizes screenshots to comply with Claude.ai limits:
 - **Multiple images**: Max 2000×2000 pixels per image
 - Maintains aspect ratio when resizing
 - Can be customized with `maxDimension` parameter
+
+**Resize Strategies:**
+- **"cut" (default)**: Crops the image to fit within max dimensions, keeping original viewport size
+- **"resize"**: Scales down the viewport to fit within max dimensions, producing smaller file sizes
+
+The "cut" strategy is preferred as it maintains the original page layout while ensuring the image fits within LLM limits. The "resize" strategy is useful when you need the entire page content visible but at a reduced scale.
 
 ### When to Use Options
 
