@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Forms Test Page</title>
+</head>
+<body>
+    <h1>Forms Test Page</h1>
+    
+    <form id="login-form" action="/login" method="POST">
+        <h2>Login Form</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required minlength="8">
+        
+        <label for="remember">
+            <input type="checkbox" id="remember" name="remember" value="1">
+            Remember me
+        </label>
+        
+        <button type="submit">Login</button>
+    </form>
+    
+    <form id="contact-form" action="/contact" method="POST">
+        <h2>Contact Form</h2>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        
+        <label for="subject">Subject:</label>
+        <select id="subject" name="subject" required>
+            <option value="">Choose a subject</option>
+            <option value="general">General Inquiry</option>
+            <option value="support">Technical Support</option>
+            <option value="sales">Sales</option>
+        </select>
+        
+        <label for="message">Message:</label>
+        <textarea id="message" name="message" rows="5" required></textarea>
+        
+        <button type="submit">Send Message</button>
+    </form>
+    
+    <form id="profile-form">
+        <h2>Profile Form</h2>
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age" min="18" max="120">
+        
+        <label for="birthday">Birthday:</label>
+        <input type="date" id="birthday" name="birthday">
+        
+        <label for="color">Favorite Color:</label>
+        <input type="color" id="color" name="color" value="#ff0000">
+        
+        <fieldset>
+            <legend>Gender:</legend>
+            <label><input type="radio" name="gender" value="male"> Male</label>
+            <label><input type="radio" name="gender" value="female"> Female</label>
+            <label><input type="radio" name="gender" value="other"> Other</label>
+        </fieldset>
+        
+        <button type="submit">Update Profile</button>
+    </form>
+</body>
+</html>

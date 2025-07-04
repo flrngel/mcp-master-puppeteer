@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Errors Test Page</title>
+</head>
+<body>
+    <h1>Errors Test Page</h1>
+    <p>This page contains intentional errors for testing.</p>
+    
+    <img src="missing-image.jpg" alt="This image doesn't exist">
+    
+    <script>
+        // Console logs
+        console.log('This is a log message');
+        console.info('This is an info message');
+        console.warn('This is a warning message');
+        console.error('This is an error message');
+        
+        // JavaScript error
+        setTimeout(() => {
+            throw new Error('Intentional JavaScript error');
+        }, 100);
+        
+        // Reference error
+        setTimeout(() => {
+            nonExistentFunction();
+        }, 200);
+        
+        // Network request that will fail
+        fetch('/api/nonexistent')
+            .then(res => console.log('Response:', res.status))
+            .catch(err => console.error('Fetch error:', err));
+    </script>
+    
+    <script src="missing-script.js"></script>
+</body>
+</html>
