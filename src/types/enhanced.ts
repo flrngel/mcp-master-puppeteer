@@ -93,8 +93,8 @@ export interface ScreenshotPlusOptions {
   format?: "png" | "jpeg" | "webp";
   quality?: number;
   actions?: any[]; // Keep existing PageAction type
-  resizeForLLM?: boolean; // Resize to stay under max pixel dimensions (default: true)
-  maxPixels?: number; // Maximum dimension in pixels (default: 8000)
+  resizeForLLM?: boolean; // Resize to stay under max total pixels (default: true)
+  maxPixels?: number; // Maximum total pixels (width × height) (default: 8000)
 }
 
 export interface ScreenshotPlusResult {

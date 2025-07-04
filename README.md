@@ -94,8 +94,8 @@ Take screenshots optimized for LLM processing with automatic resizing to stay un
   format?: "png" | "jpeg" | "webp";  // Image format (default: "jpeg")
   quality?: number;               // JPEG/WebP quality 0-100 (default: 80)
   actions?: PageAction[];         // Actions to perform before screenshot
-  resizeForLLM?: boolean;         // Resize to stay under max pixels (default: true)
-  maxPixels?: number;             // Maximum dimension in pixels (default: 8000)
+  resizeForLLM?: boolean;         // Resize to stay under max total pixels (default: true)
+  maxPixels?: number;             // Maximum total pixels (width × height) (default: 8000)
 }
 ```
 
@@ -519,7 +519,7 @@ await puppeteer_screenshot_plus({
   format: "jpeg",
   quality: 85
 });
-// Screenshots automatically resized if > 8000px
+// Screenshots automatically resized if total pixels > 8000
 
 // Custom max size
 await puppeteer_screenshot_plus({

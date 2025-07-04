@@ -65,10 +65,10 @@ export async function screenshotPlus(args: ScreenshotPlusOptions): Promise<Scree
       // Check if we need to resize for LLM
       let viewportForScreenshot = { width: breakpoint, height: 800 };
       if (resizeForLLM) {
-        const maxDimension = Math.max(actualWidth, actualHeight);
-        if (maxDimension > maxPixels) {
-          // Calculate scale factor to keep aspect ratio
-          const scaleFactor = maxPixels / maxDimension;
+        const totalPixels = actualWidth * actualHeight;
+        if (totalPixels > maxPixels) {
+          // Calculate scale factor to keep aspect ratio while staying under total pixel limit
+          const scaleFactor = Math.sqrt(maxPixels / totalPixels);
           const scaledWidth = Math.round(breakpoint * scaleFactor);
           const scaledHeight = Math.round(800 * scaleFactor);
           

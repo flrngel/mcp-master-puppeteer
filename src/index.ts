@@ -116,11 +116,11 @@ const TOOLS: Tool[] = [
         },
         resizeForLLM: {
           type: "boolean",
-          description: "Resize screenshots to stay under max pixel dimensions for LLM processing (default: true)"
+          description: "Resize screenshots to stay under max total pixels for LLM processing (default: true)"
         },
         maxPixels: {
           type: "number",
-          description: "Maximum dimension in pixels when resizing for LLM (default: 8000)"
+          description: "Maximum total pixels (width × height) when resizing for LLM (default: 8000)"
         }
       },
       required: ["name"],

@@ -24,10 +24,12 @@ async function testResize() {
       fullPage: true
     });
     
+    const dims1 = defaultResize.screenshots[0].dimensions;
+    const totalPixels1 = dims1.width * dims1.height;
     console.log('Screenshot taken with default settings:');
     console.log('- Viewport:', defaultResize.screenshots[0].viewport);
-    console.log('- Dimensions:', defaultResize.screenshots[0].dimensions);
-    console.log('- Full page:', defaultResize.screenshots[0].fullPage);
+    console.log('- Dimensions:', dims1);
+    console.log('- Total pixels:', totalPixels1.toLocaleString(), `(${totalPixels1 > 8000 ? 'resized' : 'original'})`);
 
     // Test 2: Custom max pixels
     console.log('\n3️⃣ Testing custom max pixels (4000)...');
@@ -39,9 +41,12 @@ async function testResize() {
       maxPixels: 4000
     });
     
+    const dims2 = customResize.screenshots[0].dimensions;
+    const totalPixels2 = dims2.width * dims2.height;
     console.log('Screenshot with custom max pixels:');
     console.log('- Viewport:', customResize.screenshots[0].viewport);
-    console.log('- Dimensions:', customResize.screenshots[0].dimensions);
+    console.log('- Dimensions:', dims2);
+    console.log('- Total pixels:', totalPixels2.toLocaleString(), `(${totalPixels2 > 4000 ? 'resized' : 'within limit'})`);
 
     // Test 3: Disable resizing
     console.log('\n4️⃣ Testing with resizing disabled...');
@@ -52,9 +57,12 @@ async function testResize() {
       resizeForLLM: false
     });
     
+    const dims3 = noResize.screenshots[0].dimensions;
+    const totalPixels3 = dims3.width * dims3.height;
     console.log('Screenshot without resizing:');
     console.log('- Viewport:', noResize.screenshots[0].viewport);
-    console.log('- Dimensions:', noResize.screenshots[0].dimensions);
+    console.log('- Dimensions:', dims3);
+    console.log('- Total pixels:', totalPixels3.toLocaleString(), '(original size)');
 
     // Test 4: Multiple breakpoints with resizing
     console.log('\n5️⃣ Testing multiple breakpoints...');
@@ -67,16 +75,18 @@ async function testResize() {
     
     console.log('Multiple breakpoints:');
     multiBreakpoint.screenshots.forEach((screenshot, i) => {
+      const totalPx = screenshot.dimensions.width * screenshot.dimensions.height;
       console.log(`  Breakpoint ${i + 1}:`, {
         viewport: screenshot.viewport.width,
-        actualWidth: screenshot.dimensions.width,
-        aspectRatio: screenshot.dimensions.aspectRatio
+        actualDimensions: `${screenshot.dimensions.width}×${screenshot.dimensions.height}`,
+        totalPixels: totalPx.toLocaleString(),
+        status: totalPx > 6000 ? 'resized' : 'within limit'
       });
     });
 
     console.log('\n✅ Resizing features:');
-    console.log('- Default behavior: Resize if > 8000px');
-    console.log('- Maintains aspect ratio during resize');
+    console.log('- Default behavior: Resize if total pixels > 8000');
+    console.log('- Uses square root scaling to maintain aspect ratio');
     console.log('- Can be customized or disabled');
     console.log('- Works with all breakpoints');
 
