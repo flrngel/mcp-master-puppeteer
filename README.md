@@ -95,7 +95,7 @@ Take screenshots optimized for LLM processing with automatic resizing to stay un
   quality?: number;               // JPEG/WebP quality 0-100 (default: 80)
   actions?: PageAction[];         // Actions to perform before screenshot
   resizeForLLM?: boolean;         // Resize to stay under max total pixels (default: true)
-  maxPixels?: number;             // Maximum total pixels (width × height) (default: 8000)
+  maxPixels?: number;             // Maximum total pixels (width × height). 8000 = ~89×89 square (default: 8000)
 }
 ```
 
@@ -521,12 +521,12 @@ await puppeteer_screenshot_plus({
 });
 // Screenshots automatically resized if total pixels > 8000
 
-// Custom max size
+// Custom max size (e.g., for Claude Haiku's 4000 pixel limit)
 await puppeteer_screenshot_plus({
   name: "homepage",
   breakpoints: [1920],
   resizeForLLM: true,
-  maxPixels: 4000  // Smaller limit
+  maxPixels: 4000  // ~63×63 square or 80×50 rectangle
 });
 
 // Disable resizing for full quality

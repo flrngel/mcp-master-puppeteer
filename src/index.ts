@@ -120,7 +120,7 @@ const TOOLS: Tool[] = [
         },
         maxPixels: {
           type: "number",
-          description: "Maximum total pixels (width × height) when resizing for LLM (default: 8000)"
+          description: "Maximum total pixels (width × height) when resizing for LLM. For example, 8000 allows up to ~89×89 square or 100×80 rectangle (default: 8000)"
         }
       },
       required: ["name"],
