@@ -1,0 +1,30 @@
+{
+  "name": "mcp-master-puppeteer",
+  "version": "0.1.0",
+  "description": "MCP server for browser automation using Puppeteer with configurable options",
+  "license": "MIT",
+  "author": "flrngel",
+  "homepage": "https://github.com/flrngel/mcp-master-puppeteer",
+  "bugs": "https://github.com/flrngel/mcp-master-puppeteer/issues",
+  "type": "module",
+  "bin": {
+    "mcp-master-puppeteer": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "postinstall": "npx puppeteer browsers install firefox",
+  "scripts": {
+    "build": "tsc && shx chmod +x dist/*.js",
+    "prepare": "npm run build",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.0.1",
+    "puppeteer": "^23.4.0"
+  },
+  "devDependencies": {
+    "shx": "^0.3.4",
+    "typescript": "^5.6.2"
+  }
+}
