@@ -76,7 +76,7 @@ export async function batchInteract(args: BatchInteractOptions): Promise<BatchIn
         actionResult.success = true;
         
         // Wait a bit to catch any navigation that might be starting
-        await page.waitForTimeout(100);
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         // Check if page changed
         const currentUrl = page.url();
