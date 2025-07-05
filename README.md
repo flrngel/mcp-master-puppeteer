@@ -1,5 +1,7 @@
 # MCP Master Puppeteer
 
+> `claude mcp add mcp-master-puppeteer -- npx -y github:flrngel/mcp-master-puppeteer#main`
+
 An advanced MCP (Model Context Protocol) server for browser automation using Puppeteer, optimized for minimal token usage while providing comprehensive data when needed.
 
 ## Features
