@@ -253,10 +253,22 @@ export interface GetPageInfoResult {
 
 // Enhanced AnalyzeForms types - Keep original, it's already focused
 
+// Navigation info structure for when navigation occurs
+export interface NavigationInfo {
+  fromUrl: string;
+  toUrl: string;
+  statusCode?: number;
+  redirectChain?: string[];
+  title: string;
+  navigationTimeMs?: number;
+}
+
 // Enhanced BatchInteract types
 export interface BatchInteractOptions {
   actions: any[]; // Keep existing PageAction type
   stopOnError?: boolean;
+  preventNavigation?: boolean; // Prevent any navigation from occurring (default: false)
+  returnNavigationInfo?: boolean; // Return detailed navigation info when navigation occurs (default: true)
 }
 
 export interface BatchInteractResult {
@@ -269,6 +281,8 @@ export interface BatchInteractResult {
       newUrl: string;
       newTitle: string;
     };
+    // Detailed navigation info if returnNavigationInfo is true
+    navigationInfo?: NavigationInfo;
   }>;
   finalState: {
     url: string;
@@ -277,4 +291,7 @@ export interface BatchInteractResult {
   
   // Optional - only if there are errors
   errors?: PageError[];
+  
+  // Optional - included if any navigation was prevented
+  navigationsPrevented?: number;
 }

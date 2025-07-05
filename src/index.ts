@@ -184,7 +184,7 @@ const TOOLS: Tool[] = [
   },
   {
     name: "puppeteer_batch_interact",
-    description: "Execute multiple page interactions in sequence",
+    description: "Execute multiple page interactions in sequence with navigation control",
     inputSchema: {
       type: "object",
       properties: {
@@ -220,6 +220,14 @@ const TOOLS: Tool[] = [
         stopOnError: { 
           type: "boolean", 
           description: "Stop execution on first error (default: false)" 
+        },
+        preventNavigation: {
+          type: "boolean",
+          description: "Prevent any navigation from occurring during interactions (default: false)"
+        },
+        returnNavigationInfo: {
+          type: "boolean", 
+          description: "Return detailed navigation info when navigation occurs (default: true)"
         }
       },
       required: ["actions"],
