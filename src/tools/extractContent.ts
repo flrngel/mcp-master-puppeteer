@@ -1,6 +1,7 @@
 import { getPage } from '../utils/browserManager.js';
 import { extractPageContent, htmlToMarkdown } from '../utils/htmlToMarkdown.js';
 import { ExtractContentOptions, ExtractedContentResult } from '../types/enhanced.js';
+import { buildDomTree, extractInteractiveElements, cleanupHighlights } from '../utils/domTreeBuilder.js';
 
 export async function extractContent(args: ExtractContentOptions = {}): Promise<ExtractedContentResult> {
   const { 
@@ -9,7 +10,9 @@ export async function extractContent(args: ExtractContentOptions = {}): Promise<
     outputFormat = 'markdown',
     includeAnalysis = args.includeAnalysis !== undefined 
       ? args.includeAnalysis 
-      : outputFormat === 'structured-json' // Auto-include for structured-json
+      : outputFormat === 'structured-json', // Auto-include for structured-json
+    includeDomTree = false,
+    domTreeOptions = {}
   } = args;
   
   const page = await getPage();
@@ -97,6 +100,36 @@ export async function extractContent(args: ExtractContentOptions = {}): Promise<
         unordered: 0 // TODO: Count if needed
       }
     };
+  }
+  
+  // Build DOM tree if requested
+  if (includeDomTree) {
+    try {
+      const domTree = await buildDomTree(page, {
+        showHighlightElements: domTreeOptions.showHighlightElements || false,
+        viewportExpansion: domTreeOptions.viewportExpansion || 0,
+        focusHighlightIndex: -1,
+        debugMode: false
+      });
+      
+      const interactiveElements = extractInteractiveElements(domTree);
+      
+      // Count total elements in the tree
+      const totalElements = Object.keys(domTree.map).length;
+      
+      result.domTree = {
+        elements: interactiveElements,
+        count: interactiveElements.length
+      };
+      
+      // Clean up highlights if they were not requested to be shown
+      if (!domTreeOptions.showHighlightElements) {
+        await cleanupHighlights(page);
+      }
+    } catch (error) {
+      console.error('Error building DOM tree:', error);
+      // Continue without DOM tree data
+    }
   }
   
   return result;
