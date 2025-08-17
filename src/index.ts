@@ -473,27 +473,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOLS,
 }));
 
-// Export the server for module usage
-export { server };
+// Export the server and utilities for module usage
+export { server, closeBrowser };
 
-// Run server
+// Export function to run the server
 export async function runServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
-// Only run the server if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  runServer().catch(console.error);
-}
-
-// Cleanup on exit
-process.on('SIGINT', async () => {
-  await closeBrowser();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await closeBrowser();
-  process.exit(0);
-});
+// DO NOT run the server here - let the main entry point handle it
+// Signal handlers are registered in the main entry point

@@ -7,13 +7,13 @@
   "homepage": "https://github.com/flrngel/mcp-master-puppeteer",
   "bugs": "https://github.com/flrngel/mcp-master-puppeteer/issues",
   "type": "module",
+  "main": "dist/index.js",
   "bin": {
     "mcp-master-puppeteer": "dist/index.js"
   },
   "files": [
     "dist"
   ],
-  "postinstall": "npx puppeteer browsers install firefox",
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
