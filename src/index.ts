@@ -473,13 +473,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOLS,
 }));
 
+// Export the server for module usage
+export { server };
+
 // Run server
-async function runServer() {
+export async function runServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
 
-runServer().catch(console.error);
+// Only run the server if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runServer().catch(console.error);
+}
 
 // Cleanup on exit
 process.on('SIGINT', async () => {

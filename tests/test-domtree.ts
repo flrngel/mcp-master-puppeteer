@@ -31,18 +31,17 @@ async function testDomTreeIntegration() {
     console.log(`  Title: ${result1.title}`);
     
     if (result1.domTree) {
-      console.log(`  Total elements: ${result1.domTree.totalElements}`);
-      console.log(`  Interactive elements: ${result1.domTree.totalInteractive}`);
+      console.log(`  Interactive elements count: ${result1.domTree.count}`);
       
-      if (result1.domTree.interactiveElements.length > 0) {
+      if (result1.domTree.elements.length > 0) {
         console.log('\n  First 5 interactive elements:');
-        result1.domTree.interactiveElements.slice(0, 5).forEach(elem => {
-          console.log(`    [${elem.highlightIndex}] <${elem.tagName}> ${elem.xpath}`);
+        result1.domTree.elements.slice(0, 5).forEach((elem: any) => {
+          console.log(`    [${elem.index}] <${elem.tag}>`);
           if (elem.text) {
             console.log(`      Text: "${elem.text.substring(0, 50)}..."`);
           }
-          if (elem.attributes.href) {
-            console.log(`      Href: ${elem.attributes.href}`);
+          if (elem.href) {
+            console.log(`      Href: ${elem.href}`);
           }
         });
       }
@@ -68,8 +67,7 @@ async function testDomTreeIntegration() {
     console.log(`  Title: ${result2.title}`);
     
     if (result2.domTree) {
-      console.log(`  Total elements: ${result2.domTree.totalElements}`);
-      console.log(`  Interactive elements: ${result2.domTree.totalInteractive}`);
+      console.log(`  Interactive elements count: ${result2.domTree.count}`);
       console.log('  Highlights should be visible on the page');
     }
 
@@ -92,8 +90,7 @@ async function testDomTreeIntegration() {
     console.log(`  Format: ${result3.contentFormat}`);
     
     if (result3.domTree) {
-      console.log(`  Total elements: ${result3.domTree.totalElements}`);
-      console.log(`  Interactive elements: ${result3.domTree.totalInteractive}`);
+      console.log(`  Interactive elements count: ${result3.domTree.count}`);
     }
 
     if (result3.analysis) {
@@ -120,13 +117,12 @@ async function testDomTreeIntegration() {
     console.log(`  Title: ${result4.title}`);
     
     if (result4.domTree) {
-      console.log(`  Total elements: ${result4.domTree.totalElements}`);
-      console.log(`  Interactive elements: ${result4.domTree.totalInteractive}`);
+      console.log(`  Interactive elements count: ${result4.domTree.count}`);
       
       // Group interactive elements by tag name
       const tagCounts: Record<string, number> = {};
-      result4.domTree.interactiveElements.forEach(elem => {
-        tagCounts[elem.tagName] = (tagCounts[elem.tagName] || 0) + 1;
+      result4.domTree.elements.forEach((elem: any) => {
+        tagCounts[elem.tag] = (tagCounts[elem.tag] || 0) + 1;
       });
       
       console.log('\n  Interactive elements by tag:');
