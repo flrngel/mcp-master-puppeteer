@@ -35,6 +35,13 @@ export async function getPage(): Promise<Page> {
   if (!currentPage || currentPage.isClosed()) {
     const pages = await browser.pages();
     currentPage = pages[0] || await browser.newPage();
+    
+    // Set viewport to a large size to fit most content
+    await currentPage.setViewport({
+      width: 1920,
+      height: 1080,
+      deviceScaleFactor: 1
+    });
   }
   
   return currentPage;

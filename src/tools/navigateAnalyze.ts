@@ -3,6 +3,7 @@ import { ErrorCollector } from '../utils/errorCollector.js';
 import { extractPageMetadata, analyzePagePerformance } from '../utils/pageAnalyzer.js';
 import { extractPageContent, createContentSummary, htmlToMarkdown } from '../utils/htmlToMarkdown.js';
 import { NavigateAnalyzeOptions, NavigateAnalyzeResult } from '../types/enhanced.js';
+import { buildDomTree, extractInteractiveElements, cleanupHighlights } from '../utils/domTreeBuilder.js';
 
 export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<NavigateAnalyzeResult> {
   const { 
@@ -11,7 +12,9 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     timeout = 30000,
     contentFormat = 'none',  // Default to none for minimal response
     includeMetadata = true,  // Default to true for basic metadata
-    includePerformance = false
+    includePerformance = false,
+    includeDomTree = true,  // Default to true for agent interaction support
+    domTreeOptions = {}
   } = args;
   
   const page = await getPage();
@@ -45,8 +48,46 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     
     const navigationTimeMs = Date.now() - startTime;
     
+    // Ensure viewport is set to full size after navigation
+    await page.setViewport({
+      width: 1920,
+      height: 1080,
+      deviceScaleFactor: 1
+    });
+    
     // Get page title (always needed)
     const pageTitle = await page.title();
+    
+    // Build DOM tree if requested
+    let domTreeData: any = undefined;
+    if (includeDomTree) {
+      try {
+        const domTree = await buildDomTree(page, {
+          showHighlightElements: domTreeOptions.showHighlightElements || false,
+          viewportExpansion: domTreeOptions.viewportExpansion || 0,
+          focusHighlightIndex: -1,
+          debugMode: false
+        });
+        
+        const interactiveElements = extractInteractiveElements(domTree);
+        
+        // Count total elements in the tree
+        const totalElements = Object.keys(domTree.map).length;
+        
+        domTreeData = {
+          elements: interactiveElements,
+          count: interactiveElements.length
+        };
+        
+        // Clean up highlights if they were not requested to be shown
+        if (!domTreeOptions.showHighlightElements) {
+          await cleanupHighlights(page);
+        }
+      } catch (error) {
+        console.error('Error building DOM tree:', error);
+        // Continue without DOM tree data
+      }
+    }
     
     // Process content based on format
     let contentData: string | undefined;
@@ -135,6 +176,11 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
           stylesheets: performance.resourceCount.stylesheets
         }
       };
+    }
+    
+    // Only add DOM tree if requested and available
+    if (domTreeData !== undefined) {
+      result.domTree = domTreeData;
     }
     
     return result;

@@ -203,5 +203,7 @@ dist
 .pnp.*
 
 ref_repos
+refs
 
 CLAUDE.md
+

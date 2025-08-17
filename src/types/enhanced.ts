@@ -15,6 +15,11 @@ export interface NavigateAnalyzeOptions {
   contentFormat?: ContentFormat;
   includeMetadata?: boolean; // Include basic metadata - description, ogImage (default: true)
   includePerformance?: boolean; // Include performance metrics (default: false)
+  includeDomTree?: boolean; // Include DOM tree with interactive elements (default: true)
+  domTreeOptions?: {
+    showHighlightElements?: boolean; // Show visual highlights on page (default: false)
+    viewportExpansion?: number; // Pixels to expand viewport for element detection (default: 0, -1 for all)
+  };
 }
 
 export interface NavigateAnalyzeResult {
@@ -45,6 +50,21 @@ export interface NavigateAnalyzeResult {
       stylesheets: number;
     };
   };
+  
+  // Optional - only if includeDomTree is true
+  domTree?: {
+    elements: Array<{
+      index: number; // Unique index for selection
+      tag: string; // HTML tag name
+      text?: string; // Visible text (truncated to 50 chars)
+      href?: string; // For links
+      type?: string; // For inputs/buttons
+      name?: string; // Form element name
+      value?: string; // Current value
+      placeholder?: string; // Input placeholder
+    }>;
+    count: number; // Total interactive elements
+  };
 }
 
 // Enhanced ExtractContent types
@@ -53,6 +73,11 @@ export interface ExtractContentOptions {
   includeHidden?: boolean;
   outputFormat?: ContentFormat;
   includeAnalysis?: boolean; // Include structure analysis (default: true for structured-json)
+  includeDomTree?: boolean; // Include DOM tree with interactive elements (default: false)
+  domTreeOptions?: {
+    showHighlightElements?: boolean; // Show visual highlights on page (default: false)
+    viewportExpansion?: number; // Pixels to expand viewport for element detection (default: 0, -1 for all)
+  };
 }
 
 export interface ExtractedContentResult {
@@ -81,6 +106,21 @@ export interface ExtractedContentResult {
       ordered: number;
       unordered: number;
     };
+  };
+  
+  // Optional - only if includeDomTree is true
+  domTree?: {
+    elements: Array<{
+      index: number; // Unique index for selection
+      tag: string; // HTML tag name
+      text?: string; // Visible text (truncated to 50 chars)
+      href?: string; // For links
+      type?: string; // For inputs/buttons
+      name?: string; // Form element name
+      value?: string; // Current value
+      placeholder?: string; // Input placeholder
+    }>;
+    count: number; // Total interactive elements
   };
 }
 
