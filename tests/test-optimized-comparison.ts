@@ -30,20 +30,20 @@ async function runComparison() {
   console.log('\n📍 Test 1: navigateAnalyze (default)');
 
   // Before (this is what the old default would have been - with domTree and all errors)
-  let beforeResult = await navigateAnalyze({
+  const beforeResult1 = await navigateAnalyze({
     url: TEST_URL,
     includeDomTree: true,
     includeAllErrors: true
   });
-  let beforeJson = JSON.stringify(beforeResult, null, 2);
+  let beforeJson = JSON.stringify(beforeResult1, null, 2);
   const beforeSize1 = beforeJson.length;
   const beforeTokens1 = estimateTokens(beforeJson);
 
   // After (new optimized default)
-  let afterResult = await navigateAnalyze({
+  const afterResult1 = await navigateAnalyze({
     url: TEST_URL
   });
-  let afterJson = JSON.stringify(afterResult, null, 2);
+  let afterJson = JSON.stringify(afterResult1, null, 2);
   const afterSize1 = afterJson.length;
   const afterTokens1 = estimateTokens(afterJson);
 
@@ -79,18 +79,18 @@ async function runComparison() {
   console.log('\n📊 Test 2: getPageInfo (metadata only)');
 
   // Before (returns everything)
-  beforeResult = await getPageInfo({
+  const beforeResult2 = await getPageInfo({
     sections: ['seo', 'metadata', 'accessibility', 'performance']
   });
-  beforeJson = JSON.stringify(beforeResult, null, 2);
+  beforeJson = JSON.stringify(beforeResult2, null, 2);
   const beforeSize2 = beforeJson.length;
   const beforeTokens2 = estimateTokens(beforeJson);
 
   // After (respects sections parameter)
-  afterResult = await getPageInfo({
+  const afterResult2 = await getPageInfo({
     sections: ['metadata']
   });
-  afterJson = JSON.stringify(afterResult, null, 2);
+  afterJson = JSON.stringify(afterResult2, null, 2);
   const afterSize2 = afterJson.length;
   const afterTokens2 = estimateTokens(afterJson);
 
@@ -125,18 +125,18 @@ async function runComparison() {
   console.log('\n📊 Test 3: getPageInfo (seo only)');
 
   // Before (returns everything)
-  beforeResult = await getPageInfo({
+  const beforeResult3 = await getPageInfo({
     sections: ['seo', 'metadata', 'accessibility', 'performance']
   });
-  beforeJson = JSON.stringify(beforeResult, null, 2);
+  beforeJson = JSON.stringify(beforeResult3, null, 2);
   const beforeSize3 = beforeJson.length;
   const beforeTokens3 = estimateTokens(beforeJson);
 
   // After (respects sections parameter)
-  afterResult = await getPageInfo({
+  const afterResult3 = await getPageInfo({
     sections: ['seo']
   });
-  afterJson = JSON.stringify(afterResult, null, 2);
+  afterJson = JSON.stringify(afterResult3, null, 2);
   const afterSize3 = afterJson.length;
   const afterTokens3 = estimateTokens(afterJson);
 
