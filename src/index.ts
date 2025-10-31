@@ -27,22 +27,22 @@ const screenshots = new Map<string, string>();
 const TOOLS: Tool[] = [
   {
     name: "puppeteer_navigate_analyze",
-    description: "Navigate to a URL and return page status, title, and optionally content/metadata. Use contentFormat='none' for fastest response.",
+    description: "Navigate to a URL and return page status, title, and optionally content/metadata. Use contentFormat='none' for fastest, most token-efficient response.",
     inputSchema: {
       type: "object",
       properties: {
-        url: { 
-          type: "string", 
-          description: "The URL to navigate to" 
+        url: {
+          type: "string",
+          description: "The URL to navigate to"
         },
-        waitUntil: { 
-          type: "string", 
+        waitUntil: {
+          type: "string",
           enum: ["load", "domcontentloaded", "networkidle0", "networkidle2"],
-          description: "When to consider navigation succeeded (default: networkidle0)" 
+          description: "When to consider navigation succeeded (default: networkidle0)"
         },
-        timeout: { 
-          type: "number", 
-          description: "Maximum navigation time in milliseconds (default: 30000)" 
+        timeout: {
+          type: "number",
+          description: "Maximum navigation time in milliseconds (default: 30000)"
         },
         contentFormat: {
           type: "string",
@@ -56,6 +56,14 @@ const TOOLS: Tool[] = [
         includePerformance: {
           type: "boolean",
           description: "Include performance metrics and resource counts (default: false)"
+        },
+        includeDomTree: {
+          type: "boolean",
+          description: "Include DOM tree with interactive elements for agent interaction (default: false)"
+        },
+        includeAllErrors: {
+          type: "boolean",
+          description: "Include all console logs and errors including development/analytics noise (default: false)"
         }
       },
       required: ["url"],

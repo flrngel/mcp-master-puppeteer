@@ -92,8 +92,63 @@ export class ErrorCollector {
     this.listeners.clear();
   }
 
-  getErrors(): PageError[] {
-    return [...this.errors];
+  getErrors(filterNoise: boolean = true): PageError[] {
+    let errors = [...this.errors];
+
+    if (filterNoise) {
+      errors = errors.filter(error => {
+        // Filter out development/debugging noise
+        const message = error.message.toLowerCase();
+
+        // Skip React DevTools, HMR, Fast Refresh
+        if (message.includes('react devtools') ||
+            message.includes('[hmr]') ||
+            message.includes('[fast refresh]')) {
+          return false;
+        }
+
+        // Skip analytics/tracking (GA4, session telemetry, etc.)
+        if (message.includes('analytics') ||
+            message.includes('ga4 event') ||
+            message.includes('[sessiontelemetry]')) {
+          return false;
+        }
+
+        // Skip console.info unless it's actually useful
+        if (error.level === 'info') {
+          // Keep info logs that might be errors
+          if (message.includes('error') ||
+              message.includes('failed') ||
+              message.includes('warning')) {
+            return true;
+          }
+          return false; // Skip all other info logs
+        }
+
+        // Skip expected auth failures (401 on auth/session endpoints)
+        if (error.type === 'network' && error.statusCode === 401) {
+          const url = error.url || '';
+          if (url.includes('/auth/') || url.includes('/api/auth')) {
+            return false;
+          }
+        }
+
+        // Skip failed analytics/tracking requests
+        if (error.type === 'network' && error.url) {
+          const url = error.url.toLowerCase();
+          if (url.includes('google-analytics') ||
+              url.includes('googletagmanager') ||
+              url.includes('.doubleclick.net') ||
+              url.includes('analytics.')) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+    }
+
+    return errors;
   }
 
   getSummary(): ErrorSummary {

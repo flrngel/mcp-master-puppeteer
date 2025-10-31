@@ -6,17 +6,26 @@ export async function getPageInfo(args: GetPageInfoOptions = {}): Promise<GetPag
   const { sections = ['seo', 'metadata'] } = args;
   const page = await getPage();
   const url = page.url();
-  
-  // Get basic info
-  const [title, metadata, dimensions, structure] = await Promise.all([
-    page.title(),
-    extractPageMetadata(page),
-    getPageDimensions(page),
-    getPageStructure(page)
-  ]);
-  
-  // Get accessibility info
-  const accessibility = await page.evaluate(() => {
+
+  // Determine what sections to include
+  const includeSeo = sections.includes('seo');
+  const includeMetadata = sections.includes('metadata');
+  const includeAccessibility = sections.includes('accessibility');
+  const includePerformance = sections.includes('performance');
+
+  // Get basic info (always needed)
+  const title = await page.title();
+
+  // Conditionally get metadata
+  let metadata: any = null;
+  if (includeMetadata) {
+    metadata = await extractPageMetadata(page);
+  }
+
+  // Get accessibility info (only if requested)
+  let accessibility: any = null;
+  if (includeAccessibility) {
+    accessibility = await page.evaluate(() => {
     // Document structure
     const hasProperDoctype = document.doctype !== null;
     const hasLangAttribute = document.documentElement.hasAttribute('lang');
@@ -141,10 +150,13 @@ export async function getPageInfo(args: GetPageInfoOptions = {}): Promise<GetPag
         ariaUsage
       }
     };
-  });
-  
-  // Get SEO info
-  const seo = await page.evaluate(() => {
+    });
+  }
+
+  // Get SEO info (only if requested)
+  let seo: any = null;
+  if (includeSeo) {
+    seo = await page.evaluate(() => {
     const title = document.title;
     const metaDescription = document.querySelector('meta[name="description"]');
     const description = metaDescription?.getAttribute('content') || '';
@@ -224,10 +236,13 @@ export async function getPageInfo(args: GetPageInfoOptions = {}): Promise<GetPag
       canonicalStatus,
       crawlability
     };
-  });
-  
-  // Get performance indicators
-  const performanceIndicators = await page.evaluate(() => {
+    });
+  }
+
+  // Get performance indicators (only if requested)
+  let performanceIndicators: any = null;
+  if (includePerformance) {
+    performanceIndicators = await page.evaluate(() => {
     // Resource counts
     const images = document.querySelectorAll('img').length;
     const scripts = document.querySelectorAll('script').length;
@@ -256,19 +271,32 @@ export async function getPageInfo(args: GetPageInfoOptions = {}): Promise<GetPag
         hasServiceWorker
       }
     };
-  });
-  
-  // Build the result
-  const result: GetPageInfoResult = {
+    });
+  }
+
+  // Build the result - only include requested sections
+  const result: any = {
     pageIdentification: {
       currentUrl: url,
-      canonicalUrl: seo.canonicalStatus.canonicalUrl || undefined,
       title,
-      language: accessibility.documentStructure.declaredLanguage,
       charset: await page.evaluate(() => document.characterSet),
       lastModified: await page.evaluate(() => document.lastModified)
-    },
-    metadataAnalysis: {
+    }
+  };
+
+  // Add language if available from accessibility check
+  if (accessibility) {
+    result.pageIdentification.language = accessibility.documentStructure.declaredLanguage;
+  }
+
+  // Add canonical URL if available from SEO check
+  if (seo) {
+    result.pageIdentification.canonicalUrl = seo.canonicalStatus.canonicalUrl || undefined;
+  }
+
+  // Add metadata section if requested
+  if (includeMetadata && metadata) {
+    result.metadataAnalysis = {
       metaTags: {
         basic: {
           description: metadata.description,
@@ -288,19 +316,30 @@ export async function getPageInfo(args: GetPageInfoOptions = {}): Promise<GetPag
         hasRDFa: await page.evaluate(() => !!document.querySelector('[typeof]')),
         schemas: [] // TODO: Extract schema types
       }
-    },
-    seoAssessment: seo,
-    accessibilityMetrics: accessibility,
-    performanceIndicators: {
+    };
+  }
+
+  // Add SEO section if requested
+  if (includeSeo && seo) {
+    result.seoAssessment = seo;
+  }
+
+  // Add accessibility section if requested
+  if (includeAccessibility && accessibility) {
+    result.accessibilityMetrics = accessibility;
+  }
+
+  // Add performance section if requested
+  if (includePerformance && performanceIndicators) {
+    result.performanceIndicators = {
       pageWeight: {
         htmlSizeBytes: await page.evaluate(() => document.documentElement.outerHTML.length),
         totalResourcesBytes: undefined, // TODO: Calculate total resources size
         imageOptimization: 'needs-improvement' // TODO: Assess image optimization
       },
       ...performanceIndicators
-    },
-    pageStructureOutline: structure
-  };
-  
-  return result;
+    };
+  }
+
+  return result as GetPageInfoResult;
 }

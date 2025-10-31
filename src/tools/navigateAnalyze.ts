@@ -6,15 +6,16 @@ import { NavigateAnalyzeOptions, NavigateAnalyzeResult } from '../types/enhanced
 import { buildDomTree, extractInteractiveElements, cleanupHighlights } from '../utils/domTreeBuilder.js';
 
 export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<NavigateAnalyzeResult> {
-  const { 
-    url, 
-    waitUntil = 'networkidle0', 
+  const {
+    url,
+    waitUntil = 'networkidle0',
     timeout = 30000,
     contentFormat = 'none',  // Default to none for minimal response
     includeMetadata = true,  // Default to true for basic metadata
     includePerformance = false,
-    includeDomTree = true,  // Default to true for agent interaction support
-    domTreeOptions = {}
+    includeDomTree = false,  // Default to false to minimize token usage
+    domTreeOptions = {},
+    includeAllErrors = false  // Default to false - filter out noise
   } = args;
   
   const page = await getPage();
@@ -117,9 +118,9 @@ export async function navigateAnalyze(args: NavigateAnalyzeOptions): Promise<Nav
     
     // Stop error collection
     errorCollector.stop();
-    
-    // Collect errors if any
-    const errors = errorCollector.getErrors();
+
+    // Collect errors if any, filtering noise by default
+    const errors = errorCollector.getErrors(!includeAllErrors);
     
     // Build the optimized result - minimal by default
     const result: NavigateAnalyzeResult = {

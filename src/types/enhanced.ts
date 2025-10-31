@@ -15,11 +15,12 @@ export interface NavigateAnalyzeOptions {
   contentFormat?: ContentFormat;
   includeMetadata?: boolean; // Include basic metadata - description, ogImage (default: true)
   includePerformance?: boolean; // Include performance metrics (default: false)
-  includeDomTree?: boolean; // Include DOM tree with interactive elements (default: true)
+  includeDomTree?: boolean; // Include DOM tree with interactive elements (default: false)
   domTreeOptions?: {
     showHighlightElements?: boolean; // Show visual highlights on page (default: false)
     viewportExpansion?: number; // Pixels to expand viewport for element detection (default: 0, -1 for all)
   };
+  includeAllErrors?: boolean; // Include all errors including dev/analytics noise (default: false)
 }
 
 export interface NavigateAnalyzeResult {

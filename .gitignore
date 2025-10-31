@@ -5,7 +5,7 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
@@ -207,3 +207,5 @@ refs
 
 CLAUDE.md
 
+# Test outputs
+test-outputs/
