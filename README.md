@@ -660,7 +660,7 @@ npx tsx tests/test-manual-enhanced.ts
 ## Environment Variables
 
 - `PUPPETEER_ARGS` - JSON string of Puppeteer launch options
-- `PUPPETEER_HEADLESS` - Set to "false" for headful mode
+- `PUPPETEER_HEADLESS` - Set to "false" for headful mode (default: "true", runs headless)
 - `DOCKER_CONTAINER` - Enables Docker-compatible browser args
 
 ## License

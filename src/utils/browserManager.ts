@@ -20,7 +20,7 @@ export async function getBrowser(): Promise<Browser> {
     }
     
     browserInstance = await puppeteer.launch({
-      headless: process.env.PUPPETEER_HEADLESS !== 'false',
+      headless: process.env.PUPPETEER_HEADLESS === 'false' ? false : true,
       args,
       ...customArgs
     });
